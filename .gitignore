@@ -1,0 +1,19 @@
+# 根目录阶段文档
+STAGE*_PLAN.md
+STAGE*_MOVE.md
+
+# 前端与通用构建产物
+**/node_modules/
+**/dist/
+**/build/
+**/.svelte-kit/
+**/.next/
+
+# Move/Sui 构建产物
+move/build/
+move/.package-lock/
+**/.sui/
+
+# 其他常见临时文件
+*.log
+.DS_Store
