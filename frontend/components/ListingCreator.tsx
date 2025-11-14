@@ -14,6 +14,7 @@ import {
 } from "@radix-ui/themes";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
+import { bcs } from "@mysten/sui/bcs";
 
 import { Manifest } from "@/lib/walrus";
 import { useNetworkVariable } from "@/lib/networkConfig";
@@ -96,10 +97,10 @@ export default function ListingCreator({ currentAddress }: Props) {
         arguments: [
           tx.object(marketplaceId),
           tx.pure.u64(priceMist),
-          tx.pure(walrusBlobId),
-          tx.pure(walrusHashBytes),
-          tx.pure(termsBytes),
-          tx.pure(keyBytes),
+          tx.pure(pureVectorBytes(walrusBlobId)),
+          tx.pure(pureVectorBytes(walrusHashBytes)),
+          tx.pure(pureVectorBytes(termsBytes)),
+          tx.pure(pureVectorBytes(keyBytes)),
           tx.pure.u8(PAYMENT_METHOD_DIRECT_SUI),
         ],
       });
@@ -258,6 +259,10 @@ function toHashBytes(hash?: string | null, fallback?: string | null) {
     return hexToBytes(source);
   }
   return stringToBytes(source);
+}
+
+function pureVectorBytes(bytes: Uint8Array) {
+  return bcs.vector(bcs.u8()).serialize(Array.from(bytes)).toBytes();
 }
 
 function validateManifest(data: any) {
