@@ -1,15 +1,17 @@
 import { getFullnodeUrl } from "@mysten/sui/client";
-import {
-  TESTNET_HELLO_WORLD_PACKAGE_ID,
-} from "./constants.ts";
 import { createNetworkConfig } from "@mysten/dapp-kit";
+
+const MARKETPLACE_PACKAGE_ID =
+  process.env.NEXT_PUBLIC_MARKETPLACE_PACKAGE_ID ?? "";
+const MARKETPLACE_ID = process.env.NEXT_PUBLIC_MARKETPLACE_ID ?? "";
 
 const { networkConfig, useNetworkVariable, useNetworkVariables } =
   createNetworkConfig({
     testnet: {
       url: getFullnodeUrl("testnet"),
       variables: {
-        helloWorldPackageId: TESTNET_HELLO_WORLD_PACKAGE_ID,
+        marketplacePackageId: MARKETPLACE_PACKAGE_ID,
+        marketplaceId: MARKETPLACE_ID,
       },
     },
   });

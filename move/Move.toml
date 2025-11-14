@@ -1,9 +1,10 @@
 [package]
 name = "blobsea"
 version = "0.0.1"
+edition = "2024.beta"
 
 [addresses]
 blobsea = "0x0"
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "testnet" }
+Sui = { local = ".move-cache/https___github_com_MystenLabs_sui_git_d75fae3aa7fa3545b5803980a1e0c965b8bbf48e/crates/sui-framework/packages/sui-framework" }

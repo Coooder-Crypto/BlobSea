@@ -1,6 +1,7 @@
 # 根目录阶段文档
 STAGE*_PLAN.md
 STAGE*_MOVE.md
+STAGE*_WALRUS.md
 
 # 前端与通用构建产物
 **/node_modules/
@@ -13,6 +14,7 @@ STAGE*_MOVE.md
 move/build/
 move/.package-lock/
 **/.sui/
+move/.move-cache/
 
 # 其他常见临时文件
 *.log
