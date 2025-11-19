@@ -9,7 +9,6 @@ import {
   Text,
 } from "@radix-ui/themes";
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import SellerUploader from "@/components/SellerUploader";
 import ListingCreator from "@/components/ListingCreator";
 import ListingGallery from "@/components/ListingGallery";
 import LicenseInventory from "@/components/LicenseInventory";
@@ -23,20 +22,18 @@ export default function BlobSeaApp() {
         BlobSea
       </Heading>
       <Text color="gray">
-        上传 Walrus → 上链上架 → 购买 License → 下载解密，全流程都在这个页面完成。
+        加密上传 Walrus、写入链上 Listing、购买 License、解密下载——完整流程集中在此页面。
       </Text>
 
       <Separator my="4" />
 
       <Flex direction="column" gap="4">
-        <SellerUploader currentAddress={currentAccount?.address} />
-
         {currentAccount ? (
           <ListingCreator currentAddress={currentAccount.address} />
         ) : (
           <Card>
-            <Heading size="4">链上上架</Heading>
-            <Text color="gray">连接钱包后即可提交 manifest 创建 Listing。</Text>
+            <Heading size="4">上传 + 上架</Heading>
+            <Text color="gray">连接钱包后即可上传文件并创建 Listing。</Text>
           </Card>
         )}
 

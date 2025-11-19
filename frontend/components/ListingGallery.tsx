@@ -19,6 +19,7 @@ type ListingEvent = {
   paymentMethod: number;
   name?: string;
   description?: string;
+  timestampMs?: number;
   blobId?: string;
   walrusHash?: string;
 };
@@ -62,6 +63,7 @@ export default function ListingGallery({ currentAddress }: Props) {
             paymentMethod: Number(parsed.payment_method ?? 0),
             name: rawName.length ? utf8FromBytes(rawName) : undefined,
             description: rawDescription.length ? utf8FromBytes(rawDescription) : undefined,
+            timestampMs: event.timestampMs ? Number(event.timestampMs) : undefined,
             blobId: parsed.blob_id ?? undefined,
             walrusHash: parsed.walrus_hash ?? undefined,
           };
@@ -197,6 +199,9 @@ function ListingCard({
   };
 
   const title = listing.name ?? `Listing ${shorten(listing.listingId)}`;
+  const listedAt = listing.timestampMs
+    ? formatTimestamp(listing.timestampMs)
+    : null;
   return (
     <Card>
       <Flex direction="column" gap="2">
@@ -205,6 +210,9 @@ function ListingCard({
           <Text color="gray">ID：{shorten(listing.listingId)}</Text>
         )}
         <Text color="gray">卖家：{shorten(listing.seller)}</Text>
+        {listedAt && (
+          <Text color="gray">上架时间：{listedAt}</Text>
+        )}
         {listing.description && (
           <Text color="gray">{listing.description}</Text>
         )}
@@ -250,4 +258,10 @@ function shorten(value?: string, length = 8) {
 
 function getExplorerTxUrl(digest: string) {
   return `https://suiexplorer.com/txblock/${digest}?network=testnet`;
+}
+
+function formatTimestamp(ms: number) {
+  if (!ms) return "";
+  const date = new Date(ms);
+  return date.toLocaleString();
 }
