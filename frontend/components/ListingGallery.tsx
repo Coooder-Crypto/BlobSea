@@ -1,22 +1,13 @@
-'use client';
+"use client";
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Button,
-  Card,
-  Flex,
-  Heading,
-  Text,
-  Separator,
-} from "@radix-ui/themes";
-import {
-  useSignAndExecuteTransaction,
-  useSuiClient,
-} from "@mysten/dapp-kit";
+import { Button, Card, Flex, Heading, Text, Separator } from "@radix-ui/themes";
+import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 
 import { useNetworkVariable } from "@/lib/networkConfig";
+import { bytesFromSui, utf8FromBytes } from "@/lib/bytes";
 
 const SUI_TYPE = "0x2::sui::SUI";
 
@@ -26,6 +17,8 @@ type ListingEvent = {
   price: bigint;
   coinType: string;
   paymentMethod: number;
+  name?: string;
+  description?: string;
   blobId?: string;
   walrusHash?: string;
 };
@@ -59,12 +52,16 @@ export default function ListingGallery({ currentAddress }: Props) {
         .map((event) => {
           const parsed = event.parsedJson as any;
           if (!parsed?.listing_id) return null;
+          const rawName = bytesFromSui(parsed.name);
+          const rawDescription = bytesFromSui(parsed.description);
           return {
             listingId: parsed.listing_id as string,
             seller: parsed.seller as string,
             price: BigInt(parsed.price ?? 0),
             coinType: parsed.coin_type?.fields?.name ?? SUI_TYPE,
             paymentMethod: Number(parsed.payment_method ?? 0),
+            name: rawName.length ? utf8FromBytes(rawName) : undefined,
+            description: rawDescription.length ? utf8FromBytes(rawDescription) : undefined,
             blobId: parsed.blob_id ?? undefined,
             walrusHash: parsed.walrus_hash ?? undefined,
           };
@@ -73,6 +70,7 @@ export default function ListingGallery({ currentAddress }: Props) {
     },
     refetchInterval: 30_000,
   });
+  console.log(listings);
 
   const content = useMemo(() => {
     if (!marketplacePackageId || !marketplaceId) {
@@ -167,7 +165,11 @@ function ListingCard({
     tx.moveCall({
       target: `${marketplacePackageId}::marketplace::purchase_listing`,
       typeArguments: [SUI_TYPE],
-      arguments: [tx.object(marketplaceId), tx.object(listing.listingId), payment],
+      arguments: [
+        tx.object(marketplaceId),
+        tx.object(listing.listingId),
+        payment,
+      ],
     });
     setStatus({ state: "pending" });
     signAndExecute(
@@ -194,25 +196,41 @@ function ListingCard({
     );
   };
 
+  const title = listing.name ?? `Listing ${shorten(listing.listingId)}`;
   return (
     <Card>
       <Flex direction="column" gap="2">
-        <Heading size="3">Listing {shorten(listing.listingId)}</Heading>
+        <Heading size="3">{title}</Heading>
+        {!listing.name && (
+          <Text color="gray">ID：{shorten(listing.listingId)}</Text>
+        )}
         <Text color="gray">卖家：{shorten(listing.seller)}</Text>
+        {listing.description && (
+          <Text color="gray">{listing.description}</Text>
+        )}
         <Text>价格：{priceInSui} SUI</Text>
         {listing.blobId && (
           <Text color="gray">BlobId: {shorten(listing.blobId)}</Text>
         )}
-        <Button onClick={handleBuy} disabled={!canBuy || status.state === "pending"}>
+        <Button
+          onClick={handleBuy}
+          disabled={!canBuy || status.state === "pending"}
+        >
           {status.state === "pending"
             ? "购买中..."
             : canBuy
-            ? "购买"
-            : "连接钱包购买"}
+              ? "购买"
+              : "连接钱包购买"}
         </Button>
         {status.state === "success" && (
           <Text color="green" size="2">
-            交易成功：{status.digest}
+            <a
+              href={getExplorerTxUrl(status.digest)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              交易成功，查看区块链记录
+            </a>
           </Text>
         )}
         {status.state === "error" && (
@@ -228,4 +246,8 @@ function ListingCard({
 function shorten(value?: string, length = 8) {
   if (!value) return "";
   return `${value.slice(0, length)}...${value.slice(-length)}`;
+}
+
+function getExplorerTxUrl(digest: string) {
+  return `https://suiexplorer.com/txblock/${digest}?network=testnet`;
 }

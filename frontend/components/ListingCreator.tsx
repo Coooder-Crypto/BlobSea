@@ -16,8 +16,9 @@ import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { bcs } from "@mysten/sui/bcs";
 
-import { Manifest } from "@/lib/walrus";
+import { Manifest, buildKeyPackage } from "@/lib/walrus";
 import { useNetworkVariable } from "@/lib/networkConfig";
+import { hexToBytes } from "@/lib/bytes";
 
 type Status =
   | { state: "idle" }
@@ -44,6 +45,8 @@ export default function ListingCreator({ currentAddress }: Props) {
   const [manifestError, setManifestError] = useState<string | null>(null);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [priceSui, setPriceSui] = useState("0.1");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [status, setStatus] = useState<Status>({ state: "idle" });
 
   useEffect(() => {
@@ -71,6 +74,7 @@ export default function ListingCreator({ currentAddress }: Props) {
     marketplacePackageId &&
     marketplaceId &&
     Number(priceSui) > 0 &&
+    title.trim().length > 0 &&
     status.state !== "submitting";
 
   const handleManifestFile = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -85,11 +89,28 @@ export default function ListingCreator({ currentAddress }: Props) {
     try {
       const tx = new Transaction();
       const priceMist = toMist(priceSui);
+      const trimmedTitle = title.trim();
+      const descriptionText = description.trim();
+      const nameBytes = stringToBytes(trimmedTitle);
+      const descriptionBytes = stringToBytes(descriptionText);
+      if (nameBytes.length === 0) {
+        throw new Error("名称不能为空");
+      }
+      if (nameBytes.length > 128) {
+        throw new Error("名称长度不能超过 128 字节");
+      }
+      if (descriptionBytes.length > 2048) {
+        throw new Error("介绍长度不能超过 2048 字节");
+      }
 
       const walrusBlobId = stringToBytes(manifest.blobId ?? "");
       const walrusHashBytes = toHashBytes(manifest.walrusHash, manifest.contentHash);
       const termsBytes = hexToBytes(manifest.termsHash);
-      const keyBytes = hexToBytes(manifest.keyHex);
+      const keyBytes = buildKeyPackage(
+        hexToBytes(manifest.keyHex),
+        hexToBytes(manifest.nonceHex),
+        manifest.sourceFileName,
+      );
 
       tx.moveCall({
         target: `${marketplacePackageId}::marketplace::create_listing`,
@@ -97,6 +118,8 @@ export default function ListingCreator({ currentAddress }: Props) {
         arguments: [
           tx.object(marketplaceId),
           tx.pure.u64(priceMist),
+          tx.pure(pureVectorBytes(nameBytes)),
+          tx.pure(pureVectorBytes(descriptionBytes)),
           tx.pure(pureVectorBytes(walrusBlobId)),
           tx.pure(pureVectorBytes(walrusHashBytes)),
           tx.pure(pureVectorBytes(termsBytes)),
@@ -169,7 +192,15 @@ export default function ListingCreator({ currentAddress }: Props) {
         </Flex>
 
         <Flex gap="3" align="center">
-          <Box>
+          <Box flexGrow="1">
+            <Text weight="bold">数据名称</Text>
+            <TextField.Root
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="例如：2024-Q1 DEX Snapshot"
+            />
+          </Box>
+          <Box flexGrow="1">
             <Text weight="bold">价格（SUI）</Text>
             <TextField.Root
               type="number"
@@ -177,6 +208,18 @@ export default function ListingCreator({ currentAddress }: Props) {
               step="0.000000001"
               value={priceSui}
               onChange={(event) => setPriceSui(event.target.value)}
+            />
+          </Box>
+        </Flex>
+
+        <Flex gap="3" align="center">
+          <Box flexGrow="1">
+            <Text weight="bold">数据简介</Text>
+            <TextArea
+              minRows={3}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="说明数据内容、格式、采集时间等（选填）"
             />
           </Box>
           <Box>
@@ -193,7 +236,13 @@ export default function ListingCreator({ currentAddress }: Props) {
 
         {status.state === "success" && (
           <Text color="green" size="2">
-            交易成功：{status.digest}
+            <a
+              href={getExplorerTxUrl(status.digest)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              交易成功，查看区块链记录
+            </a>
           </Text>
         )}
         {status.state === "error" && (
@@ -206,6 +255,16 @@ export default function ListingCreator({ currentAddress }: Props) {
           <>
             <Separator my="2" />
             <Heading size="3">预览</Heading>
+            {title.trim() && (
+              <Text size="2" color="gray">
+                名称：{title.trim()}
+              </Text>
+            )}
+            {description.trim() && (
+              <Text size="2" color="gray">
+                简介：{description.trim()}
+              </Text>
+            )}
             <Text size="2" color="gray">
               BlobId: {manifest.blobId}
             </Text>
@@ -239,26 +298,21 @@ function stringToBytes(value: string) {
   return new TextEncoder().encode(value ?? "");
 }
 
-function hexToBytes(hex: string | null | undefined) {
-  if (!hex) return new Uint8Array();
-  const normalized = hex.startsWith("0x") ? hex.slice(2) : hex;
-  if (normalized.length % 2 !== 0) {
-    throw new Error("十六进制长度必须为偶数");
+function toHashBytes(primary?: string | null, fallback?: string | null) {
+  const value = primary ?? fallback ?? "";
+  if (!value) return new Uint8Array();
+  if (isHex(value)) {
+    return hexToBytes(value);
   }
-  const bytes = new Uint8Array(normalized.length / 2);
-  for (let i = 0; i < normalized.length; i += 2) {
-    bytes[i / 2] = parseInt(normalized.slice(i, i + 2), 16);
+  if (primary && fallback && primary !== fallback) {
+    return toHashBytes(fallback, null);
   }
-  return bytes;
+  throw new Error("Walrus 哈希必须是十六进制字符串");
 }
 
-function toHashBytes(hash?: string | null, fallback?: string | null) {
-  const source = hash ?? fallback ?? "";
-  if (!source) return new Uint8Array();
-  if (source.startsWith("0x") || /^[0-9a-fA-F]+$/.test(source)) {
-    return hexToBytes(source);
-  }
-  return stringToBytes(source);
+function isHex(value: string) {
+  const normalized = value.startsWith("0x") ? value.slice(2) : value;
+  return /^[0-9a-fA-F]+$/.test(normalized);
 }
 
 function pureVectorBytes(bytes: Uint8Array) {
@@ -270,4 +324,8 @@ function validateManifest(data: any) {
   required.forEach((field) => {
     if (!data[field]) throw new Error(`Manifest 缺少字段: ${field}`);
   });
+}
+
+function getExplorerTxUrl(digest: string) {
+  return `https://suiexplorer.com/txblock/${digest}?network=testnet`;
 }

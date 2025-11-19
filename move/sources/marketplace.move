@@ -16,6 +16,12 @@ module blobsea::marketplace {
     const E_NOT_SELLER: u64 = 6;
     const E_INVALID_STATUS: u64 = 7;
     const E_WRONG_MARKETPLACE: u64 = 8;
+    const E_NAME_TOO_LONG: u64 = 9;
+    const E_DESCRIPTION_TOO_LONG: u64 = 10;
+    const E_NAME_EMPTY: u64 = 11;
+
+    const MAX_NAME_BYTES: u64 = 128;
+    const MAX_DESCRIPTION_BYTES: u64 = 2_048;
 
     const PAYMENT_METHOD_DIRECT_SUI: u8 = 0;
     const PAYMENT_METHOD_DIRECT_COIN: u8 = 1;
@@ -42,6 +48,8 @@ module blobsea::marketplace {
         seller: address,
         price: u64,
         coin_type: TypeName,
+        name: vector<u8>,
+        description: vector<u8>,
         walrus_blob_id: vector<u8>,
         walrus_hash: vector<u8>,
         terms_hash: vector<u8>,
@@ -92,6 +100,8 @@ module blobsea::marketplace {
         price: u64,
         coin_type: TypeName,
         payment_method: u8,
+        name: vector<u8>,
+        description: vector<u8>,
         walrus_blob_id: vector<u8>,
         walrus_hash: vector<u8>,
         terms_hash: vector<u8>,
@@ -157,6 +167,8 @@ module blobsea::marketplace {
     public entry fun create_listing<T>(
         marketplace: &mut Marketplace,
         price: u64,
+        name: vector<u8>,
+        description: vector<u8>,
         walrus_blob_id: vector<u8>,
         walrus_hash: vector<u8>,
         terms_hash: vector<u8>,
@@ -169,6 +181,7 @@ module blobsea::marketplace {
             payment_method == PAYMENT_METHOD_DIRECT_SUI || payment_method == PAYMENT_METHOD_DIRECT_COIN,
             E_INVALID_PAYMENT_METHOD
         );
+        assert_valid_metadata(&name, &description);
 
         marketplace.listing_count = marketplace.listing_count + 1;
         let seller = TxContextModule::sender(ctx);
@@ -179,6 +192,8 @@ module blobsea::marketplace {
             seller,
             price,
             coin_type: TypeNameModule::with_defining_ids<T>(),
+            name,
+            description,
             walrus_blob_id,
             walrus_hash,
             terms_hash,
@@ -397,6 +412,8 @@ module blobsea::marketplace {
             price: listing.price,
             coin_type: listing.coin_type,
             payment_method: listing.payment_method,
+            name: clone_bytes(&listing.name),
+            description: clone_bytes(&listing.description),
             walrus_blob_id: clone_bytes(&listing.walrus_blob_id),
             walrus_hash: clone_bytes(&listing.walrus_hash),
             terms_hash: clone_bytes(&listing.terms_hash),
@@ -463,5 +480,13 @@ module blobsea::marketplace {
             i = i + 1;
         };
         result
+    }
+
+    fun assert_valid_metadata(name: &vector<u8>, description: &vector<u8>) {
+        let name_len = vector::length(name);
+        assert!(name_len > 0, E_NAME_EMPTY);
+        assert!(name_len <= MAX_NAME_BYTES, E_NAME_TOO_LONG);
+        let desc_len = vector::length(description);
+        assert!(desc_len <= MAX_DESCRIPTION_BYTES, E_DESCRIPTION_TOO_LONG);
     }
 }

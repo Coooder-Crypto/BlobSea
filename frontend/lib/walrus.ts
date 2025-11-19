@@ -1,4 +1,5 @@
 import { sha3_256 } from "@noble/hashes/sha3";
+import { bytesToHex, concatBytes, stringToBytes } from "@/lib/bytes";
 
 export type WalrusUploadResult = {
   blobId: string | null;
@@ -124,9 +125,9 @@ export function manifestToBlob(manifest: Manifest) {
   const json = JSON.stringify(manifest, null, 2);
   return new Blob([json], { type: "application/json" });
 }
-
-function bytesToHex(bytes: Uint8Array) {
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+export function buildKeyPackage(key: Uint8Array, nonce: Uint8Array, fileName?: string) {
+  const nameBytes = stringToBytes(fileName || "blobsea-file");
+  const nameLength = new Uint8Array(2);
+  new DataView(nameLength.buffer).setUint16(0, nameBytes.length, true);
+  return concatBytes(nonce, key, nameLength, nameBytes);
 }
