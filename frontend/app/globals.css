@@ -122,8 +122,196 @@ body {
   color: #ffffff;
 }
 
+.blobsea-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid transparent;
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  background: transparent;
+}
+
+.blobsea-header.is-active {
+  background: rgba(3, 6, 18, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.blobsea-header__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.blobsea-logo {
+  border: none;
+  background: transparent;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  padding: 0;
+  font-size: 1.6rem;
+  font-family: "Space Mono", "Share Tech Mono", "JetBrains Mono", monospace;
+  letter-spacing: 0.35rem;
+  text-transform: uppercase;
+  position: relative;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  opacity: 0;
+  transform: translateY(-18px) scale(0.8);
+  pointer-events: none;
+}
+
+.blobsea-logo.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.blobsea-logo__glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.35), transparent 60%);
+  filter: blur(18px);
+  opacity: 0.6;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.blobsea-logo:hover .blobsea-logo__glow {
+  opacity: 0.9;
+}
+
+.blobsea-logo__mark {
+  letter-spacing: 0.4rem;
+}
+
+.blobsea-nav {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  text-transform: uppercase;
+  font-family: "Space Mono", "IBM Plex Mono", monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.2rem;
+}
+
+.blobsea-nav__link {
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+  padding-bottom: 0.2rem;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.blobsea-nav__link:hover {
+  color: #f0f9ff;
+}
+
+.blobsea-nav__link.is-active {
+  color: #53f7ff;
+  border-color: #53f7ff;
+}
+
+.blobsea-header__wallet {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.blobsea-wallet__connect {
+  display: flex;
+  align-items: center;
+}
+
+.blobsea-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(1, 1, 3, 0.85);
+  margin-top: 4rem;
+}
+
+.blobsea-footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 3rem 1.5rem;
+  flex-wrap: wrap;
+}
+
+.blobsea-footer__brand {
+  font-size: 1.8rem;
+  font-family: "Space Mono", "Share Tech Mono", "JetBrains Mono", monospace;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.4rem;
+}
+
+.blobsea-footer__links {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-family: "Space Mono", monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2rem;
+}
+
+.blobsea-footer__links a {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.blobsea-footer__links a:hover {
+  color: #53f7ff;
+}
+
+.blobsea-footer__meta {
+  color: rgba(255, 255, 255, 0.4);
+  font-family: "Space Mono", monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.15rem;
+}
+
+.blobsea-footer__inner,
+.blobsea-header__inner {
+  width: min(1200px, 100%);
+}
+
 @media (max-width: 720px) {
   .hero-panel {
     border-radius: 22px;
+  }
+
+  .blobsea-header__inner {
+    justify-content: center;
+  }
+
+  .blobsea-nav {
+    justify-content: center;
+    letter-spacing: 0.15rem;
+  }
+
+  .blobsea-header__wallet {
+    justify-content: center;
+  }
+
+  .blobsea-footer__inner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .blobsea-footer__links {
+    justify-content: center;
   }
 }

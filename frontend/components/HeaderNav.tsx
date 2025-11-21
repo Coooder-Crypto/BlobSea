@@ -1,8 +1,9 @@
 'use client';
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Box, Button, Flex, Heading } from "@radix-ui/themes";
+import { usePathname, useRouter } from "next/navigation";
+import { Button } from "@radix-ui/themes";
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 
 const navLinks = [
@@ -14,46 +15,64 @@ const navLinks = [
 export default function HeaderNav() {
   const currentAccount = useCurrentAccount();
   const pathname = usePathname();
+  const router = useRouter();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsScrolled(window.scrollY > 80);
+    handler();
+    window.addEventListener("scroll", handler);
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  const isHome = pathname === "/";
+  const showSolidBackground = !isHome || isScrolled;
+
+  const handleLogoClick = () => {
+    if (pathname !== "/") {
+      router.push("/");
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const navItems = useMemo(
+    () =>
+      navLinks.map((link) => ({
+        ...link,
+        isActive: pathname === link.href,
+      })),
+    [pathname],
+  );
 
   return (
-    <header
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
-        borderBottom: "1px solid var(--gray-a2)",
-        background: "var(--color-panel-solid)",
-      }}
-    >
-      <Flex
-        direction="row"
-        justify="between"
-        align="center"
-        px="4"
-        py="2"
-        style={{ maxWidth: 1200, margin: "0 auto" }}
-      >
-        <Flex align="center" gap="4" wrap="wrap">
-          <Heading>BlobSea</Heading>
-          <nav style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`nav-link${isActive ? " is-active" : ""}`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </Flex>
-        <Box style={{ display: "flex", gap: 10, alignItems: "center" }}>
+    <header className={`blobsea-header${showSolidBackground ? " is-active" : ""}`}>
+      <div className="blobsea-header__inner">
+        <button
+          className={`blobsea-logo${showSolidBackground ? " is-visible" : ""}`}
+          onClick={handleLogoClick}
+        >
+          <div className="blobsea-logo__glow" aria-hidden />
+          <span className="blobsea-logo__mark">BLOBSEA</span>
+        </button>
+
+        <nav className="blobsea-nav">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`blobsea-nav__link${item.isActive ? " is-active" : ""}`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="blobsea-header__wallet">
           {currentAccount && (
             <Button
               variant="soft"
+              size="2"
               onClick={() =>
                 window.open(
                   `https://faucet.sui.io/?address=${currentAccount.address}`,
@@ -64,9 +83,11 @@ export default function HeaderNav() {
               获取测试网 SUI
             </Button>
           )}
-          <ConnectButton />
-        </Box>
-      </Flex>
+          <div className="blobsea-wallet__connect">
+            <ConnectButton />
+          </div>
+        </div>
+      </div>
     </header>
   );
 }
