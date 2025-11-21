@@ -1,10 +1,19 @@
 'use client';
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Box, Button, Flex, Heading } from "@radix-ui/themes";
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
 
+const navLinks = [
+  { label: "落地页", href: "/" },
+  { label: "发送", href: "/sell" },
+  { label: "购买", href: "/buy" },
+];
+
 export default function HeaderNav() {
   const currentAccount = useCurrentAccount();
+  const pathname = usePathname();
 
   return (
     <header
@@ -24,7 +33,23 @@ export default function HeaderNav() {
         py="2"
         style={{ maxWidth: 1200, margin: "0 auto" }}
       >
-        <Heading>BlobSea</Heading>
+        <Flex align="center" gap="4" wrap="wrap">
+          <Heading>BlobSea</Heading>
+          <nav style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`nav-link${isActive ? " is-active" : ""}`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </Flex>
         <Box style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {currentAccount && (
             <Button
