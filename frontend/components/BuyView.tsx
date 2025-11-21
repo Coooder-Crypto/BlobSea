@@ -25,18 +25,18 @@ export default function BuyView() {
       <Flex direction="column" gap="5">
         <Box>
           <Badge variant="soft" color="green">
-            购买数据
+            Buy Data
           </Badge>
           <Heading size="7" mt="2" mb="2">
-            购买者工作台
+            Buyer Workspace
           </Heading>
           <Text color="gray" size="4">
-            浏览来自 Walrus 的数据 Listing，完成支付后可立即在 License
-            区块中解密取回。流程保持透明，状态一目了然。
+            Browse listings backed by Walrus, purchase in one click, and decrypt via your
+            license inventory immediately afterward.
           </Text>
           <Box mt="3">
             <Button variant="surface" asChild>
-              <Link href="/sell">我要发送我的数据</Link>
+              <Link href="/sell">I want to sell my data</Link>
             </Button>
           </Box>
         </Box>
@@ -45,11 +45,12 @@ export default function BuyView() {
           <Flex direction="column" gap="4">
             <Box>
               <Heading size="5" mb="1">
-                浏览 Listing 并解密
+                Browse listings and decrypt
               </Heading>
               <Text color="gray">
-                如果是首次购买，请切换到测试网钱包并准备 SUI；BlobSea
-                会在链上完成支付并在 License 清单中展示可下载项。
+                First time purchasing? Switch to a Sui testnet wallet and keep enough SUI
+                handy. BlobSea will handle the on-chain payment and surface downloadable
+                entries inside your license list.
               </Text>
             </Box>
 

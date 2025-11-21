@@ -72,28 +72,28 @@ export default function LicenseInventory({ currentAddress }: Props) {
     <Card>
       <Flex direction="column" gap="3">
         <Flex align="center" justify="between">
-          <Heading size="4">我的 License</Heading>
+          <Heading size="4">My Licenses</Heading>
           <Button variant="soft" size="2" onClick={() => refetch()}>
-            刷新
+            Refresh
           </Button>
         </Flex>
 
         {!currentAddress && (
-          <Text color="gray">连接钱包后可查看已购买的 License。</Text>
+          <Text color="gray">Connect your wallet to view purchased licenses.</Text>
         )}
         {currentAddress && !marketplacePackageId && (
-          <Text color="gray">请配置 Marketplace 包信息。</Text>
+          <Text color="gray">Configure the marketplace package information first.</Text>
         )}
 
-        {isLoading && currentAddress && <Text>加载中...</Text>}
+        {isLoading && currentAddress && <Text>Loading...</Text>}
         {error && (
           <Text color="red">
-            获取 License 失败：
+            Failed to load licenses:
             {error instanceof Error ? error.message : String(error)}
           </Text>
         )}
         {licenses && licenses.length === 0 && (
-          <Text color="gray">暂无 License，先购买一份 Listing。</Text>
+          <Text color="gray">No licenses yet. Purchase a listing first.</Text>
         )}
 
         {licenses && licenses.length > 0 && (
@@ -152,12 +152,12 @@ function LicenseCard({ license, suiClient, status, onStatusChange }: LicenseCard
       });
       const listingFields = (listingObject.data?.content as any)?.fields;
       if (!listingFields) {
-        throw new Error("无法读取 Listing 数据");
+        throw new Error("Unable to read listing data");
       }
       const blobBytes = bytesFromSui(listingFields.walrus_blob_id);
       const blobId = utf8FromBytes(blobBytes).trim();
       if (!blobId) {
-        throw new Error("Listing 缺少 Walrus Blob ID");
+        throw new Error("Listing is missing a Walrus blob ID");
       }
       const walrusHashBytes = bytesFromSui(listingFields.walrus_hash);
       const walrusHashHex = walrusHashBytes.length ? bytesToHex(walrusHashBytes) : null;
@@ -173,7 +173,7 @@ function LicenseCard({ license, suiClient, status, onStatusChange }: LicenseCard
         message:
           downloadError instanceof Error
             ? downloadError.message
-            : "下载失败，请稍后重试",
+            : "Download failed, please try again later",
       });
     }
   };
@@ -181,14 +181,14 @@ function LicenseCard({ license, suiClient, status, onStatusChange }: LicenseCard
   return (
     <Card>
       <Flex direction="column" gap="2">
-        <Text>License 对象：{shortId}</Text>
-        <Text color="gray">Listing：{license.listingId}</Text>
+        <Text>License object: {shortId}</Text>
+        <Text color="gray">Listing: {license.listingId}</Text>
         <Button
           variant="soft"
           onClick={handleDownload}
           disabled={status.state === "pending"}
         >
-          {status.state === "pending" ? "下载中..." : "下载并解密"}
+          {status.state === "pending" ? "Downloading..." : "Download & decrypt"}
         </Button>
         {status.state === "error" && (
           <Text color="red" size="2">
@@ -197,7 +197,7 @@ function LicenseCard({ license, suiClient, status, onStatusChange }: LicenseCard
         )}
         {status.state === "success" && (
           <Text color="green" size="2">
-            下载完成
+            Download complete
           </Text>
         )}
       </Flex>
@@ -215,12 +215,12 @@ async function downloadWithLicense({
   walrusHashHex: string | null;
 }) {
   if (!licenseKey.length) {
-    throw new Error("License 中缺少密钥数据");
+    throw new Error("License is missing key data");
   }
   const { nonce, key, fileName } = splitKeyPackage(licenseKey);
   const response = await fetch(`/api/walrus/${encodeURIComponent(blobId)}`);
   if (!response.ok) {
-    throw new Error("Walrus 下载失败");
+    throw new Error("Walrus download failed");
   }
   const payload = new Uint8Array(await response.arrayBuffer());
   if (walrusHashHex && isProbableHex(walrusHashHex)) {
@@ -235,7 +235,7 @@ async function downloadWithLicense({
     }
   }
   if (payload.length < 28) {
-    throw new Error("Walrus 返回内容异常");
+    throw new Error("Walrus response payload is invalid");
   }
   const authTag = payload.slice(12, 28);
   const ciphertext = payload.slice(28);
@@ -266,7 +266,7 @@ async function downloadWithLicense({
 
 function splitKeyPackage(pkg: Uint8Array) {
   if (pkg.length < 46) {
-    throw new Error("密钥包格式不正确");
+    throw new Error("Key package format is invalid");
   }
   const nonce = pkg.slice(0, 12);
   const key = pkg.slice(12, 44);

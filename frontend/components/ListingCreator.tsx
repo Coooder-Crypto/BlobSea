@@ -70,15 +70,18 @@ export default function ListingCreator({ currentAddress }: Props) {
     const nameBytes = stringToBytes(trimmedTitle);
     const descriptionBytes = stringToBytes(descriptionText);
     if (nameBytes.length === 0) {
-      setStatus({ state: "error", message: "名称不能为空" });
+      setStatus({ state: "error", message: "Name must not be empty" });
       return;
     }
     if (nameBytes.length > 128) {
-      setStatus({ state: "error", message: "名称长度不能超过 128 字节" });
+      setStatus({ state: "error", message: "Name must be 128 bytes or fewer" });
       return;
     }
     if (descriptionBytes.length > 2048) {
-      setStatus({ state: "error", message: "介绍长度不能超过 2048 字节" });
+      setStatus({
+        state: "error",
+        message: "Description must be 2048 bytes or fewer",
+      });
       return;
     }
 
@@ -124,23 +127,24 @@ export default function ListingCreator({ currentAddress }: Props) {
   return (
     <Card>
       <Flex direction="column" gap="3">
-        <Heading size="4">上传 + 上架（一步完成）</Heading>
+        <Heading size="4">Upload + publish (single step)</Heading>
         <Text color="gray">
-          选择数据文件、填写名称与价格，BlobSea 会自动加密上传到 Walrus 并立即把 manifest
-          写入链上创建 Listing。高级设置可配置 Epoch、Permanent 以及 send_object_to。
+          Pick your dataset, add a title and price, and BlobSea encrypts to Walrus then
+          writes the manifest on-chain immediately. Advanced options let you tweak epochs,
+          permanence, and send_object_to.
         </Text>
 
         <Flex gap="3" align="center">
           <Box flexGrow="1">
-            <Text weight="bold">数据名称</Text>
+            <Text weight="bold">Dataset name</Text>
             <TextField.Root
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="例如：2024-Q1 DEX Snapshot"
+              placeholder="e.g. 2024-Q1 DEX Snapshot"
             />
           </Box>
           <Box flexGrow="1">
-            <Text weight="bold">价格（SUI）</Text>
+            <Text weight="bold">Price (SUI)</Text>
             <TextField.Root
               type="number"
               min="0"
@@ -153,7 +157,7 @@ export default function ListingCreator({ currentAddress }: Props) {
 
         <Flex gap="3" align="center">
           <Box flexGrow="1">
-            <Text weight="bold">选择数据文件</Text>
+            <Text weight="bold">Select data file</Text>
             <input
               type="file"
               onChange={(event) => {
@@ -163,12 +167,12 @@ export default function ListingCreator({ currentAddress }: Props) {
             />
             {file && (
               <Text size="2" color="gray">
-                已选择：{file.name}（{formatBytes(file.size)}）
+                Selected: {file.name} ({formatBytes(file.size)})
               </Text>
             )}
           </Box>
           <Box flexGrow="1">
-            <Text weight="bold">许可条款文件（可选）</Text>
+            <Text weight="bold">License terms file (optional)</Text>
             <input
               type="file"
               onChange={(event) => {
@@ -176,12 +180,12 @@ export default function ListingCreator({ currentAddress }: Props) {
                 setTermsFile(event.target.files?.[0] ?? null);
               }}
             />
-            <Text size="2" color="gray">不上传会使用默认条款哈希。</Text>
+            <Text size="2" color="gray">Leave empty to use the default terms hash.</Text>
           </Box>
         </Flex>
 
         <Separator my="1" size="4" />
-        <Heading size="3">高级设置</Heading>
+        <Heading size="3">Advanced settings</Heading>
         <Flex gap="3" align="center">
           <Box>
             <Text weight="bold">Walrus Epochs</Text>
@@ -219,7 +223,8 @@ export default function ListingCreator({ currentAddress }: Props) {
                 }}
                 disabled={!currentAddress}
               />
-              send_object_to {currentAddress ? shorten(currentAddress) : "(连接钱包启用)"}
+              send_object_to{" "}
+              {currentAddress ? shorten(currentAddress) : "(connect wallet to enable)"}
             </label>
           </Box>
         </Flex>
@@ -227,49 +232,50 @@ export default function ListingCreator({ currentAddress }: Props) {
         <Separator my="1" size="4" />
         <Flex gap="3" align="center">
           <Box flexGrow="1">
-            <Text weight="bold">数据简介</Text>
+            <Text weight="bold">Dataset description</Text>
             <TextArea
               minRows={3}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="说明数据内容、格式、采集时间等（选填）"
+              placeholder="Describe content, format, timeframe, etc. (optional)"
             />
           </Box>
           <Box>
             <Text weight="bold">Marketplace ID</Text>
             <Text size="2" color="gray">
-              {marketplaceId || "未配置，请设置 NEXT_PUBLIC_MARKETPLACE_ID"}
+              {marketplaceId || "Not configured. Set NEXT_PUBLIC_MARKETPLACE_ID."}
             </Text>
           </Box>
         </Flex>
 
         <Button onClick={handleSubmit} disabled={!canSubmit}>
           {status.state === "uploading"
-            ? "加密并上传..."
+            ? "Encrypting & uploading..."
             : status.state === "submitting"
-              ? "写入链上..."
-              : "上传并上架"}
+              ? "Committing on chain..."
+              : "Upload and publish"}
         </Button>
 
         {status.state === "idle" && (
           <Text size="2" color="gray">
-            Walrus 上传成功后会缓存 manifest，若链上提交失败可直接重试（无需再次上传）。
+            Walrus uploads cache the manifest. If the on-chain transaction fails you can
+            retry without uploading again.
           </Text>
         )}
         {status.state === "uploading" && (
           <Text size="2" color="gray">
-            本地加密并上传到 Walrus 中...
+            Encrypting locally and uploading to Walrus...
           </Text>
         )}
         {status.state === "submitting" && (
           <Text size="2" color="gray">
-            Walrus 已完成，正在向链上写入 Listing...
+            Walrus upload done. Writing the listing on chain...
           </Text>
         )}
         {status.state === "success" && (
           <Text color="green" size="2">
             <a href={getExplorerTxUrl(status.digest)} target="_blank" rel="noreferrer">
-              交易成功，查看区块链记录
+              Transaction succeeded — view the record
             </a>
           </Text>
         )}
@@ -282,15 +288,15 @@ export default function ListingCreator({ currentAddress }: Props) {
         {manifest && (
           <>
             <Separator my="2" />
-            <Heading size="3">最新 Manifest</Heading>
+            <Heading size="3">Latest manifest</Heading>
             <TextArea readOnly value={manifestJson} minRows={8} />
             <Text size="2" color="gray">
-              Walrus BlobId: {manifest.blobId || "(未返回)"}
+              Walrus BlobId: {manifest.blobId || "(not returned)"}
             </Text>
             <Text size="2" color="gray">Terms hash: {manifest.termsHash}</Text>
             {manifest.suiBlobObjectId && (
               <Text size="2" color="gray">
-                链上 Blob Object: {manifest.suiBlobObjectId}
+                On-chain blob object: {manifest.suiBlobObjectId}
               </Text>
             )}
           </>
@@ -328,7 +334,7 @@ function submitListing({
     const priceMist = toMist(priceSui);
     const walrusBlobId = stringToBytes(manifest.blobId ?? "");
     if (walrusBlobId.length === 0) {
-      throw new Error("Walrus 未返回 blobId");
+      throw new Error("Walrus did not return a blobId");
     }
     const walrusHashBytes = toHashBytes(manifest.walrusHash, manifest.contentHash);
     const termsBytes = hexToBytes(manifest.termsHash);
@@ -365,7 +371,8 @@ function submitListing({
             .catch((error) =>
               setStatus({
                 state: "error",
-                message: error instanceof Error ? error.message : "等待上链时出错",
+                message:
+                  error instanceof Error ? error.message : "Error while waiting for on-chain confirmation",
               }),
             );
         },
@@ -387,7 +394,7 @@ function submitListing({
 function toMist(value: string): bigint {
   const numeric = Number(value);
   if (!isFinite(numeric) || numeric <= 0) {
-    throw new Error("价格必须大于 0");
+    throw new Error("Price must be greater than 0");
   }
   return BigInt(Math.floor(numeric * 1_000_000_000));
 }
@@ -405,7 +412,7 @@ function toHashBytes(primary?: string | null, fallback?: string | null) {
   if (primary && fallback && primary !== fallback) {
     return toHashBytes(fallback, null);
   }
-  throw new Error("Walrus 哈希必须是十六进制字符串");
+  throw new Error("Walrus hash must be a hex string");
 }
 
 function isHex(value: string) {

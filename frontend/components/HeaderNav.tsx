@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@radix-ui/themes";
 import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
+import BlobSeaLogo from "@/components/BlobSeaLogo";
 
 const navLinks = [
-  { label: "落地页", href: "/" },
-  { label: "发送", href: "/sell" },
-  { label: "购买", href: "/buy" },
+  { label: "Home", href: "/" },
+  { label: "Sell", href: "/sell" },
+  { label: "Buy", href: "/buy" },
 ];
 
 export default function HeaderNav() {
@@ -53,6 +54,9 @@ export default function HeaderNav() {
           onClick={handleLogoClick}
         >
           <div className="blobsea-logo__glow" aria-hidden />
+          <span className="blobsea-logo__icon" aria-hidden>
+            <BlobSeaLogo />
+          </span>
           <span className="blobsea-logo__mark">BLOBSEA</span>
         </button>
 
@@ -80,7 +84,7 @@ export default function HeaderNav() {
                 )
               }
             >
-              获取测试网 SUI
+              Get testnet SUI
             </Button>
           )}
           <div className="blobsea-wallet__connect">

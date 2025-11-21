@@ -78,21 +78,21 @@ export default function ListingGallery({ currentAddress }: Props) {
     if (!marketplacePackageId || !marketplaceId) {
       return (
         <Text color="gray">
-          请在环境变量中配置 `NEXT_PUBLIC_MARKETPLACE_PACKAGE_ID` 与
-          `NEXT_PUBLIC_MARKETPLACE_ID`。
+          Configure `NEXT_PUBLIC_MARKETPLACE_PACKAGE_ID` and
+          `NEXT_PUBLIC_MARKETPLACE_ID` in your environment first.
         </Text>
       );
     }
 
-    if (isLoading) return <Text>加载中...</Text>;
+    if (isLoading) return <Text>Loading...</Text>;
     if (error)
       return (
         <Text color="red">
-          加载失败：{error instanceof Error ? error.message : String(error)}
+          Failed to load listings: {error instanceof Error ? error.message : String(error)}
         </Text>
       );
     if (!listings || listings.length === 0) {
-      return <Text color="gray">暂无 Listing，先上传并上架一个文件吧。</Text>;
+      return <Text color="gray">No listings yet. Upload a file and publish it first.</Text>;
     }
 
     return (
@@ -121,9 +121,9 @@ export default function ListingGallery({ currentAddress }: Props) {
     <Card>
       <Flex direction="column" gap="3">
         <Flex align="center" justify="between">
-          <Heading size="4">Listing 列表</Heading>
+          <Heading size="4">Live Listings</Heading>
           <Button variant="soft" size="2" onClick={() => refetch()}>
-            刷新
+            Refresh
           </Button>
         </Flex>
         {content}
@@ -185,7 +185,7 @@ function ListingCard({
               setStatus({
                 state: "error",
                 message:
-                  error instanceof Error ? error.message : "等待链上确认失败",
+                  error instanceof Error ? error.message : "Failed while waiting for on-chain confirmation",
               }),
             );
         },
@@ -207,16 +207,14 @@ function ListingCard({
       <Flex direction="column" gap="2">
         <Heading size="3">{title}</Heading>
         {!listing.name && (
-          <Text color="gray">ID：{shorten(listing.listingId)}</Text>
+          <Text color="gray">ID: {shorten(listing.listingId)}</Text>
         )}
-        <Text color="gray">卖家：{shorten(listing.seller)}</Text>
-        {listedAt && (
-          <Text color="gray">上架时间：{listedAt}</Text>
-        )}
+        <Text color="gray">Seller: {shorten(listing.seller)}</Text>
+        {listedAt && <Text color="gray">Listed at: {listedAt}</Text>}
         {listing.description && (
           <Text color="gray">{listing.description}</Text>
         )}
-        <Text>价格：{priceInSui} SUI</Text>
+        <Text>Price: {priceInSui} SUI</Text>
         {listing.blobId && (
           <Text color="gray">BlobId: {shorten(listing.blobId)}</Text>
         )}
@@ -225,10 +223,10 @@ function ListingCard({
           disabled={!canBuy || status.state === "pending"}
         >
           {status.state === "pending"
-            ? "购买中..."
+            ? "Purchasing..."
             : canBuy
-              ? "购买"
-              : "连接钱包购买"}
+              ? "Purchase"
+              : "Connect wallet to purchase"}
         </Button>
         {status.state === "success" && (
           <Text color="green" size="2">
@@ -237,7 +235,7 @@ function ListingCard({
               target="_blank"
               rel="noreferrer"
             >
-              交易成功，查看区块链记录
+              Purchase successful — view on chain
             </a>
           </Text>
         )}

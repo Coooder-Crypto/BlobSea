@@ -5,7 +5,7 @@ export function hexToBytes(hex: string): Uint8Array {
   if (!hex) return new Uint8Array();
   const normalized = hex.startsWith("0x") ? hex.slice(2) : hex;
   if (normalized.length % 2 !== 0) {
-    throw new Error("十六进制长度必须为偶数");
+    throw new Error("Hex string length must be even");
   }
   const bytes = new Uint8Array(normalized.length / 2);
   for (let i = 0; i < normalized.length; i += 2) {

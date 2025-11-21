@@ -1,118 +1,250 @@
 'use client';
 
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import Link from "next/link";
 import {
-  Badge,
-  Box,
-  Button,
-  Card,
-  Container,
-  Flex,
-  Heading,
-  Text,
-} from "@radix-ui/themes";
+  CubeIcon,
+  LightningBoltIcon,
+  LockClosedIcon,
+  CodeIcon,
+  RocketIcon,
+} from "@radix-ui/react-icons";
 
-const heroHighlights = [
-  { label: "步骤 01", detail: "加密文件上传到 Walrus" },
-  { label: "步骤 02", detail: "Manifest 写入链上 Listing" },
-  { label: "步骤 03", detail: "买家获取 License 解密下载" },
+import BlobSeaLogo from "@/components/BlobSeaLogo";
+
+type SectionKey = "features" | "sdk";
+
+const features = [
+  {
+    title: "End-to-end encryption",
+    description:
+      "Files are encrypted client-side with AES-GCM and tracked with a Walrus hash so only licensed buyers can decrypt them.",
+    Icon: LockClosedIcon,
+  },
+  {
+    title: "Provable ownership",
+    description:
+      "Listings and licenses mint on Sui, giving you tamper-evident purchase history and audit trails.",
+    Icon: CubeIcon,
+  },
+  {
+    title: "Agent-ready",
+    description:
+      "Structured metadata and the SDK make it easy for autonomous agents to discover, settle, and download datasets.",
+    Icon: LightningBoltIcon,
+  },
 ];
 
-const featureCards = [
-  {
-    title: "模块化上手",
-    body: "落地页、发送页与购买页各司其职，帮助团队分角色协作。",
-  },
-  {
-    title: "Walrus 原生",
-    body: "围绕 Walrus commit + Sui Listing 的核心路径设计交互。",
-  },
-  {
-    title: "轻量体验",
-    body: "没有多余表单或弹窗，聚焦必填信息与状态提示。",
-  },
+const developerBullets = [
+  { Icon: CodeIcon, text: "TypeScript SDK (in progress)" },
+  { Icon: RocketIcon, text: "HTTP 402 / agent payment flows" },
 ];
 
-const workflowCards = [
-  {
-    badge: "发送数据",
-    title: "上传＋上架",
-    description: "一站式完成加密上传 Walrus 以及链上 Listing 的创建。",
-    cta: "前往发送",
-    href: "/sell",
-  },
-  {
-    badge: "购买数据",
-    title: "浏览＋解密",
-    description: "查找 Listing、完成支付并在 License 里即时解密下载。",
-    cta: "前往购买",
-    href: "/buy",
-  },
-];
+const codeSnippet = `// 1. Initialize a BlobSea agent
+import { BlobSeaAgent } from '@blobsea/sdk';
+
+const agent = new BlobSeaAgent({
+  network: 'sui:testnet',
+  key: process.env.AGENT_KEY,
+});
+
+// 2. Discover and purchase a listing
+const license = await agent.marketplace.buy({
+  listing: '0x123...abc',
+  budget: '100 SUI',
+});
+
+// 3. Auto-download and decrypt
+const dataset = await license.download();
+console.log(dataset.files[0].name);`;
 
 export default function BlobSeaApp() {
+  const [scrollY, setScrollY] = useState(0);
+  const [revealed, setRevealed] = useState<Record<SectionKey, boolean>>({
+    features: false,
+    sdk: false,
+  });
+
+  const featuresRef = useRef<HTMLDivElement | null>(null);
+  const sdkRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handler = () => setScrollY(window.scrollY);
+    handler();
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const key = entry.target.getAttribute("data-section");
+          if (entry.isIntersecting && (key === "features" || key === "sdk")) {
+            setRevealed((prev) =>
+              prev[key] ? prev : { ...prev, [key]: true },
+            );
+          }
+        });
+      },
+      { threshold: 0.25 },
+    );
+
+    const sections: Array<[SectionKey, RefObject<HTMLDivElement>]> = [
+      ["features", featuresRef],
+      ["sdk", sdkRef],
+    ];
+
+    sections.forEach(([key, ref]) => {
+      if (ref.current) {
+        ref.current.setAttribute("data-section", key);
+        observer.observe(ref.current);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const heroLogoStyle = useMemo(() => {
+    const translate = Math.min(scrollY * 0.3, 180);
+    const scale = Math.max(0.8, 1 - scrollY * 0.001);
+    const rotate = scrollY * 0.02;
+    const opacity = Math.max(0, 1 - scrollY / 400);
+    return {
+      transform: `translateY(${translate}px) scale(${scale}) rotate(${rotate}deg)`,
+      opacity,
+      filter: `blur(${Math.min(8, scrollY * 0.02)}px)`,
+    };
+  }, [scrollY]);
+
+  const heroTaglineStyle = useMemo(
+    () => ({
+      transform: `translateY(${scrollY * 0.25}px)`,
+      opacity: Math.max(0, 1 - scrollY / 550),
+    }),
+    [scrollY],
+  );
+
+  const heroCardStyle = useMemo(
+    () => ({ transform: `translateY(${scrollY * 0.15}px)` }),
+    [scrollY],
+  );
+
   return (
-    <Container size="4" mt="6" px="4" pb="8">
-      <Flex direction="column" gap="5">
-        <section className="hero-panel">
-          <Flex direction="column" gap="4">
-            <Badge color="green" variant="soft" size="2" style={{ width: "fit-content" }}>
-              Walrus + Sui
-            </Badge>
-            <Heading size="8" style={{ lineHeight: 1.1 }}>
-              让加密数据的上链与交易分区更清晰
-            </Heading>
-            <Text size="4" color="gray">
-              BlobSea 将落地页、发送页面与购买页面拆分，保持每一步骤专注，
-              同时用一套视觉语言承载 Walrus 与 Sui 的完整流程。
-            </Text>
-            <div className="hero-actions">
-              <Button size="3" asChild>
-                <Link href="/sell">立即发送</Link>
-              </Button>
-              <Button size="3" variant="surface" asChild>
-                <Link href="/buy">前往购买</Link>
-              </Button>
+    <div className="blobsea-landing">
+      <div className="blobsea-hero">
+        <div className="blobsea-hero__grid" style={{ transform: `translateY(${scrollY * 0.2}px)` }} />
+        <div className="blobsea-hero__aura" style={{ transform: `translate(-50%, ${scrollY * 0.5}px)` }} />
+        <div className="blobsea-hero__halo blobsea-hero__halo--left" />
+        <div className="blobsea-hero__halo blobsea-hero__halo--right" />
+
+        <div className="blobsea-hero__inner">
+          <div className="blobsea-hero__logo" style={heroLogoStyle}>
+            <div className="blobsea-hero__logo-glow" />
+            <div className="blobsea-hero__logo-float">
+              <BlobSeaLogo />
             </div>
-            <Flex wrap="wrap" gap="3" mt="3">
-              {heroHighlights.map((item) => (
-                <Box key={item.label} className="flow-pill">
-                  <Text weight="bold">{item.label}</Text>{" "}
-                  <Text color="gray">{item.detail}</Text>
-                </Box>
-              ))}
-            </Flex>
-          </Flex>
-        </section>
+          </div>
 
-        <div className="features-grid">
-          {featureCards.map((feature) => (
-            <Card key={feature.title} className="feature-card">
-              <Flex direction="column" gap="2">
-                <Heading size="4">{feature.title}</Heading>
-                <Text color="gray">{feature.body}</Text>
-              </Flex>
-            </Card>
-          ))}
-        </div>
+          <div className="blobsea-pill" style={heroTaglineStyle}>
+            BUILT ON WALRUS &amp; SUI
+          </div>
 
-        <div className="workflow-grid">
-          {workflowCards.map((workflow) => (
-            <Card key={workflow.title} className="workflow-card">
-              <Flex direction="column" gap="3">
-                <Badge variant="soft" color="blue" style={{ width: "fit-content" }}>
-                  {workflow.badge}
-                </Badge>
-                <Heading size="5">{workflow.title}</Heading>
-                <Text color="gray">{workflow.description}</Text>
-                <Button size="2" variant="surface" asChild>
-                  <Link href={workflow.href}>{workflow.cta}</Link>
-                </Button>
-              </Flex>
-            </Card>
-          ))}
+          <h1 className="blobsea-headline" style={{ transform: `translateY(${scrollY * 0.2}px)` }}>
+            ENABLING DATA MARKETS
+            <span className="blobsea-headline__pixel">FOR THE AI ERA</span>
+          </h1>
+
+          <div className="blobsea-hero__card" style={heroCardStyle}>
+            <p>
+              BlobSea unifies Walrus encryption, Sui listings, and license-based decryption
+              into one agent-ready workflow. Creators publish in a single step, while buyers
+              and agents can purchase, verify, and download original datasets automatically.
+            </p>
+            <div className="blobsea-hero__cta">
+              <Link href="/sell" className="blobsea-btn blobsea-btn--primary">
+                Sell data
+              </Link>
+              <Link href="/buy" className="blobsea-btn blobsea-btn--outline">
+                Browse listings
+              </Link>
+              <Link href="https://github.com/coooder/BlobSea" target="_blank" rel="noreferrer" className="blobsea-link">
+                Project docs
+              </Link>
+            </div>
+          </div>
         </div>
-      </Flex>
-    </Container>
+      </div>
+
+      <div
+        ref={featuresRef}
+        className={`blobsea-feature-grid${revealed.features ? " is-visible" : ""}`}
+      >
+        {features.map(({ title, description, Icon }) => (
+          <div key={title} className="blobsea-feature-card">
+            <div className="blobsea-feature-icon">
+              <Icon width={22} height={22} />
+            </div>
+            <h3>{title}</h3>
+            <p>{description}</p>
+          </div>
+        ))}
+      </div>
+
+      <div
+        ref={sdkRef}
+        className={`blobsea-sdk${revealed.sdk ? " is-visible" : ""}`}
+      >
+        <div className="blobsea-sdk__content">
+          <div className="blobsea-sdk__label">SDK &amp; AGENT API</div>
+          <h2>Programmable Data Markets</h2>
+          <p>
+            Plug BlobSea directly into AI pipelines via an SDK that handles listing discovery,
+            on-chain payment, and license decryption—perfect for responding to HTTP 402
+            workflows automatically.
+          </p>
+          <ul>
+            {developerBullets.map(({ Icon, text }) => (
+              <li key={text}>
+                <span className="blobsea-sdk__bullet">
+                  <Icon width={16} height={16} />
+                </span>
+                {text}
+              </li>
+            ))}
+          </ul>
+          <Link
+            href="https://github.com/coooder/BlobSea"
+            target="_blank"
+            rel="noreferrer"
+            className="blobsea-btn blobsea-btn--secondary"
+          >
+            View developer docs
+          </Link>
+        </div>
+        <div className="blobsea-code">
+          <div className="blobsea-code__traffic">
+            <span />
+            <span />
+            <span />
+          </div>
+          <pre>{codeSnippet}</pre>
+          <div className="blobsea-code__footer">
+            <span>npm install @blobsea/sdk</span>
+            <span>v0.1.0-beta</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="blobsea-banner">
+        <span>///</span>
+        <span>HTTP 402</span>
+        <span>///</span>
+        <span>PAYMENT REQUIRED</span>
+        <span>///</span>
+        <span>AUTOMATION</span>
+        <span>///</span>
+      </div>
+    </div>
   );
 }
