@@ -2,7 +2,7 @@ type Props = {
   className?: string;
 };
 
-export default function BlobSeaLogo({ className = "blobsea-logo-svg" }: Props) {
+export default function BlobSeaLogo({ className = "h-12 w-12" }: Props) {
   return (
     <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
       <path d="M8 8H24V24H8V8Z" fill="#22d3ee" />

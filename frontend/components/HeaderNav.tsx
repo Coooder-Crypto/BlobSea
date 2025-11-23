@@ -1,28 +1,26 @@
-'use client';
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Button } from "@radix-ui/themes";
-import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
+import { ConnectButton } from "@mysten/dapp-kit";
 import BlobSeaLogo from "@/components/BlobSeaLogo";
 
 const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Sell", href: "/sell" },
-  { label: "Buy", href: "/buy" },
+  { label: "Discover", href: "/market" },
+  { label: "Build", href: "/create" },
+  { label: "Inventory", href: "/inventory" },
 ];
 
 export default function HeaderNav() {
-  const currentAccount = useCurrentAccount();
   const pathname = usePathname();
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handler = () => setIsScrolled(window.scrollY > 80);
+    const handler = () => setIsScrolled(window.scrollY > 100);
     handler();
-    window.addEventListener("scroll", handler);
+    window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
@@ -47,51 +45,48 @@ export default function HeaderNav() {
   );
 
   return (
-    <header className={`blobsea-header${showSolidBackground ? " is-active" : ""}`}>
-      <div className="blobsea-header__inner">
-        <button
-          className={`blobsea-logo${showSolidBackground ? " is-visible" : ""}`}
+    <nav
+      className={`sticky top-0 z-50 w-full border-b transition-all duration-500 ${showSolidBackground ? "bg-[#040817]/90 backdrop-blur-md border-white/10 py-0 shadow-lg" : "bg-transparent border-transparent py-4"}`}
+    >
+      <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div
+          className={`
+              flex items-center gap-3 cursor-pointer group transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)
+              ${
+                showSolidBackground
+                  ? "translate-y-0 scale-100 opacity-100 pointer-events-auto"
+                  : "-translate-y-12 scale-50 opacity-0 pointer-events-none"
+              }
+            `}
           onClick={handleLogoClick}
         >
-          <div className="blobsea-logo__glow" aria-hidden />
-          <span className="blobsea-logo__icon" aria-hidden>
-            <BlobSeaLogo />
+          <div className="relative transition-transform group-hover:-translate-y-1 duration-200">
+            <div className="absolute inset-0 bg-walrus-cyan blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+            <BlobSeaLogo className="w-12 h-12 relative z-10" />
+          </div>
+          <span className="font-pixel text-3xl font-bold text-white tracking-widest mt-1">
+            BLOBSEA
           </span>
-          <span className="blobsea-logo__mark">BLOBSEA</span>
-        </button>
+        </div>
 
-        <nav className="blobsea-nav">
+        <div className="hidden items-center gap-8 font-mono text-sm uppercase tracking-wider text-white/60 md:flex">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`blobsea-nav__link${item.isActive ? " is-active" : ""}`}
+              className={`pb-1 transition-colors ${item.isActive ? "border-b-2 border-[#53f7ff] text-white" : "border-b-2 border-transparent hover:text-white"}`}
             >
               {item.label}
             </Link>
           ))}
-        </nav>
+        </div>
 
-        <div className="blobsea-header__wallet">
-          {currentAccount && (
-            <Button
-              variant="soft"
-              size="2"
-              onClick={() =>
-                window.open(
-                  `https://faucet.sui.io/?address=${currentAccount.address}`,
-                  "_blank",
-                )
-              }
-            >
-              Get testnet SUI
-            </Button>
-          )}
-          <div className="blobsea-wallet__connect">
-            <ConnectButton />
-          </div>
+        <div
+          className={`transition-opacity duration-300 ${showSolidBackground ? "opacity-100" : "opacity-80"}`}
+        >
+          <ConnectButton />
         </div>
       </div>
-    </header>
+    </nav>
   );
 }

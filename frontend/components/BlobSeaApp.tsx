@@ -1,70 +1,73 @@
-'use client';
+"use client";
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import Link from "next/link";
 import {
-  CubeIcon,
-  LightningBoltIcon,
-  LockClosedIcon,
-  CodeIcon,
-  RocketIcon,
-} from "@radix-ui/react-icons";
+  ArrowRight,
+  Database,
+  ShieldCheck,
+  Zap,
+  Terminal,
+  Code,
+  Cpu,
+} from "lucide-react";
 
 import BlobSeaLogo from "@/components/BlobSeaLogo";
 
 type SectionKey = "features" | "sdk";
 
-const features = [
+const featureCards = [
   {
-    title: "End-to-end encryption",
+    icon: ShieldCheck,
+    title: "End-to-End Encryption",
     description:
-      "Files are encrypted client-side with AES-GCM and tracked with a Walrus hash so only licensed buyers can decrypt them.",
-    Icon: LockClosedIcon,
+      "Your data is encrypted client-side before it ever touches Walrus.",
   },
   {
-    title: "Provable ownership",
+    icon: Database,
+    title: "Provable Ownership",
     description:
-      "Listings and licenses mint on Sui, giving you tamper-evident purchase history and audit trails.",
-    Icon: CubeIcon,
+      "Listing metadata and licenses are minted on Sui for transparent history.",
   },
   {
-    title: "Agent-ready",
+    icon: Zap,
+    title: "Agent Ready",
     description:
-      "Structured metadata and the SDK make it easy for autonomous agents to discover, settle, and download datasets.",
-    Icon: LightningBoltIcon,
+      "Structured metadata allows agents to autonomously discover and buy data.",
   },
 ];
 
-const developerBullets = [
-  { Icon: CodeIcon, text: "TypeScript SDK (in progress)" },
-  { Icon: RocketIcon, text: "HTTP 402 / agent payment flows" },
+const sdkHighlights = [
+  { icon: Code, label: "Type-safe TypeScript SDK" },
+  { icon: Cpu, label: "HTTP 402 automation" },
 ];
 
-const codeSnippet = `// 1. Initialize a BlobSea agent
-import { BlobSeaAgent } from '@blobsea/sdk';
+const codeSnippet = `// 1. Initialize the BlobSea Agent
+import { BlobSea } from '@blobsea/sdk';
 
-const agent = new BlobSeaAgent({
+const agent = new BlobSea.Agent({
   network: 'sui:testnet',
-  key: process.env.AGENT_KEY,
+  privateKey: process.env.AGENT_KEY
 });
 
-// 2. Discover and purchase a listing
+// 2. Discover & Purchase Data
+const listingId = '0x123...abc';
 const license = await agent.marketplace.buy({
-  listing: '0x123...abc',
-  budget: '100 SUI',
+  listing: listingId,
+  budget: '100 SUI'
 });
 
-// 3. Auto-download and decrypt
+// 3. Download & Decrypt (Auto-handled)
 const dataset = await license.download();
-console.log(dataset.files[0].name);`;
+console.log(dataset.files[0].name);
+// Output: "training_data_v1.jsonl"`;
 
 export default function BlobSeaApp() {
   const [scrollY, setScrollY] = useState(0);
-  const [revealed, setRevealed] = useState<Record<SectionKey, boolean>>({
+  const [visible, setVisible] = useState<Record<SectionKey, boolean>>({
     features: false,
     sdk: false,
   });
-
   const featuresRef = useRef<HTMLDivElement | null>(null);
   const sdkRef = useRef<HTMLDivElement | null>(null);
 
@@ -81,13 +84,11 @@ export default function BlobSeaApp() {
         entries.forEach((entry) => {
           const key = entry.target.getAttribute("data-section");
           if (entry.isIntersecting && (key === "features" || key === "sdk")) {
-            setRevealed((prev) =>
-              prev[key] ? prev : { ...prev, [key]: true },
-            );
+            setVisible((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
           }
         });
       },
-      { threshold: 0.25 },
+      { threshold: 0.15 },
     );
 
     const sections: Array<[SectionKey, RefObject<HTMLDivElement>]> = [
@@ -113,137 +114,158 @@ export default function BlobSeaApp() {
     return {
       transform: `translateY(${translate}px) scale(${scale}) rotate(${rotate}deg)`,
       opacity,
-      filter: `blur(${Math.min(8, scrollY * 0.02)}px)`,
+      filter: `blur(${Math.min(10, scrollY * 0.02)}px)`,
     };
   }, [scrollY]);
 
-  const heroTaglineStyle = useMemo(
-    () => ({
-      transform: `translateY(${scrollY * 0.25}px)`,
-      opacity: Math.max(0, 1 - scrollY / 550),
-    }),
-    [scrollY],
-  );
-
-  const heroCardStyle = useMemo(
-    () => ({ transform: `translateY(${scrollY * 0.15}px)` }),
-    [scrollY],
-  );
-
   return (
-    <div className="blobsea-landing">
-      <div className="blobsea-hero">
-        <div className="blobsea-hero__grid" style={{ transform: `translateY(${scrollY * 0.2}px)` }} />
-        <div className="blobsea-hero__aura" style={{ transform: `translate(-50%, ${scrollY * 0.5}px)` }} />
-        <div className="blobsea-hero__halo blobsea-hero__halo--left" />
-        <div className="blobsea-hero__halo blobsea-hero__halo--right" />
+    <div className="relative overflow-hidden bg-[#01030a] py-20 text-white">
+      <div
+        className="absolute inset-0 bg-grid-pattern bg-[size:40px_40px] opacity-10"
+        style={{ transform: `translateY(${scrollY * 0.2}px)` }}
+      />
 
-        <div className="blobsea-hero__inner">
-          <div className="blobsea-hero__logo" style={heroLogoStyle}>
-            <div className="blobsea-hero__logo-glow" />
-            <div className="blobsea-hero__logo-float">
-              <BlobSeaLogo />
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section className="text-center">
+          <div
+            className="mb-4 flex justify-center will-change-transform"
+            style={heroLogoStyle}
+          >
+            <div className="relative group ">
+              <div className="absolute inset-0 bg-[#53f7ff] blur-2xl opacity-15 group-hover:opacity-30 transition-opacity" />
+              <div className="relative animate-float drop-shadow-[0_0_12px_rgba(34,211,238,0.45)]">
+                <BlobSeaLogo className="h-36 w-36 md:h-48 md:w-48" />
+              </div>
             </div>
           </div>
 
-          <div className="blobsea-pill" style={heroTaglineStyle}>
-            BUILT ON WALRUS &amp; SUI
+          <div className="inline-block mb-4 px-4 py-2 border border-walrus-cyan/30 bg-walrus-cyan/5 rounded-full transition-all duration-500">
+            <span className="font-mono text-xs text-walrus-cyan uppercase tracking-widest">
+              Built on Walrus & Sui
+            </span>
           </div>
 
-          <h1 className="blobsea-headline" style={{ transform: `translateY(${scrollY * 0.2}px)` }}>
+          <h1
+            className="font-mono text-3xl md:text-5xl font-bold leading-tight mb-8 text-white transition-transform duration-75 ease-out relative z-20"
+            style={{ transform: `translateY(${scrollY * 0.2}px)` }}
+          >
             ENABLING DATA MARKETS
-            <span className="blobsea-headline__pixel">FOR THE AI ERA</span>
+            <br />
+            {/* Enhanced Pixel Style for the second line */}
+            <span className="block mt-2 font-pixel text-4xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-walrus-cyan via-white to-walrus-purple drop-shadow-[4px_4px_0_rgba(34,211,238,0.25)]">
+              FOR THE AI ERA
+            </span>
           </h1>
 
-          <div className="blobsea-hero__card" style={heroCardStyle}>
-            <p>
-              BlobSea unifies Walrus encryption, Sui listings, and license-based decryption
-              into one agent-ready workflow. Creators publish in a single step, while buyers
-              and agents can purchase, verify, and download original datasets automatically.
+          <div className="relative z-20 max-w-4xl mx-auto -mt-2 sm:-mt-4 mb-4 py-6 bg-walrus-dark/40 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl transition-all duration-300 hover:border-walrus-cyan/30 hover:bg-walrus-dark/60 group">
+            {/* Decorative corners */}
+            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-walrus-cyan/50 rounded-tl-lg"></div>
+            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-walrus-purple/50 rounded-br-lg"></div>
+
+            <p className="font-bold text-lg text-gray-300 font-mono">
+              BlobSea is where the world’s data becomes{" "}
+              <span className="text-walrus-cyan font-bold">reliable</span>,{" "}
+              <span className="text-walrus-purple font-bold">valuable</span>,
+              and{" "}
+              <span className="text-walrus-green font-bold">governable</span>.
+              <br className="hidden md:block" />
+              Securely trade{" "}
+              <span className="text-white">encrypted datasets</span> and models
+              with{" "}
+              <span className="border-b-2 border-walrus-cyan/30 pb-0.5">
+                on-chain verification
+              </span>
+              .
             </p>
-            <div className="blobsea-hero__cta">
-              <Link href="/sell" className="blobsea-btn blobsea-btn--primary">
-                Sell data
-              </Link>
-              <Link href="/buy" className="blobsea-btn blobsea-btn--outline">
-                Browse listings
-              </Link>
-              <Link href="https://github.com/coooder/BlobSea" target="_blank" rel="noreferrer" className="blobsea-link">
-                Project docs
-              </Link>
+          </div>
+
+          <div className="mt-2 flex flex-col items-center justify-center gap-6 sm:flex-row">
+            <Link
+              href="/buy"
+              className="font-bold inline-flex items-center gap-2 border-2 border-[#53f7ff] bg-[#53f7ff] px-8 py-4 font-mono text-sm uppercase tracking-wider text-black shadow-[4px_4px_0_rgba(34,211,238,0.3)] transition-transform duration-200 hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(34,211,238,0.5)]"
+            >
+              Start Exploring <ArrowRight className="h-5 w-5" />
+            </Link>
+            <Link
+              href="https://github.com/coooder/BlobSea"
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold inline-flex items-center gap-2 border-2 border-[#53f7ff] px-8 py-4 font-mono text-sm uppercase tracking-wider text-white transition-transform duration-200 hover:-translate-y-1 hover:bg-[#53f7ff]/10"
+            >
+              Read Documentation
+            </Link>
+          </div>
+        </section>
+
+        <section
+          ref={featuresRef}
+          className={`mt-24 grid gap-8 md:grid-cols-2 lg:grid-cols-3 ${visible.features ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"} transition-all duration-700`}
+        >
+          {featureCards.map(({ icon: Icon, title, description }) => (
+            <div
+              key={title}
+              className="rounded-[28px] border border-white/10 bg-[#0b1326]/80 p-8 text-left shadow-[0_20px_40px_rgba(0,0,0,0.45)] transition-transform duration-300 hover:-translate-y-2 hover:border-[#53f7ff66]"
+            >
+              <div className="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
+                <Icon className="h-6 w-6" />
+              </div>
+              <h3 className="font-mono text-xl font-bold">{title}</h3>
+              <p className="text-sm text-gray-300">{description}</p>
+            </div>
+          ))}
+        </section>
+
+        <section
+          ref={sdkRef}
+          className={`mt-24 grid overflow-hidden rounded-[32px] border border-white/10 bg-white/5 shadow-2xl transition-all duration-700 md:grid-cols-2 ${visible.sdk ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}
+        >
+          <div className="flex flex-col gap-4 border-b border-white/10 px-8 py-10 font-mono transition-colors duration-300 hover:bg-white/5 md:border-b-0 md:border-r">
+            <div className="inline-flex items-center gap-3 rounded-full border border-white/15 px-4 py-2 text-xs tracking-[0.4em] text-white/70">
+              <Terminal className="h-4 w-4" /> SDK &amp; AGENT API
+            </div>
+            <h2 className="text-3xl font-semibold">
+              Programmable Data Markets
+            </h2>
+            <p className="text-white/70">
+              Integrate BlobSea directly into your AI pipelines. Our SDK handles
+              listing discovery, on-chain payments, and decryption
+              automatically.
+            </p>
+            <ul className="space-y-2 text-sm text-white/80">
+              {sdkHighlights.map(({ icon: Icon, label }) => (
+                <li key={label} className="flex items-center gap-3">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  {label}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex flex-col gap-4 bg-[#05050b] px-8 py-10 font-mono text-sm text-white/80 transition-colors duration-300 hover:bg-[#080810]">
+            <div className="flex items-center gap-2">
+              <span className="h-3 w-3 rounded-full bg-red-400" />
+              <span className="h-3 w-3 rounded-full bg-yellow-400" />
+              <span className="h-3 w-3 rounded-full bg-green-400" />
+            </div>
+            <pre className="whitespace-pre-line">{codeSnippet}</pre>
+            <div className="border-t border-white/10 pt-4 text-xs tracking-[0.4em] text-white/60">
+              npm install @blobsea/cli
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div
-        ref={featuresRef}
-        className={`blobsea-feature-grid${revealed.features ? " is-visible" : ""}`}
-      >
-        {features.map(({ title, description, Icon }) => (
-          <div key={title} className="blobsea-feature-card">
-            <div className="blobsea-feature-icon">
-              <Icon width={22} height={22} />
-            </div>
-            <h3>{title}</h3>
-            <p>{description}</p>
+        <section className="mt-16 text-center font-pixel text-xs uppercase tracking-[0.5em] text-white/50">
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <span>///</span>
+            <span>HTTP 402</span>
+            <span>///</span>
+            <span>PAYMENT REQUIRED</span>
+            <span>///</span>
+            <span>AUTOMATION</span>
+            <span>///</span>
           </div>
-        ))}
-      </div>
-
-      <div
-        ref={sdkRef}
-        className={`blobsea-sdk${revealed.sdk ? " is-visible" : ""}`}
-      >
-        <div className="blobsea-sdk__content">
-          <div className="blobsea-sdk__label">SDK &amp; AGENT API</div>
-          <h2>Programmable Data Markets</h2>
-          <p>
-            Plug BlobSea directly into AI pipelines via an SDK that handles listing discovery,
-            on-chain payment, and license decryption—perfect for responding to HTTP 402
-            workflows automatically.
-          </p>
-          <ul>
-            {developerBullets.map(({ Icon, text }) => (
-              <li key={text}>
-                <span className="blobsea-sdk__bullet">
-                  <Icon width={16} height={16} />
-                </span>
-                {text}
-              </li>
-            ))}
-          </ul>
-          <Link
-            href="https://github.com/coooder/BlobSea"
-            target="_blank"
-            rel="noreferrer"
-            className="blobsea-btn blobsea-btn--secondary"
-          >
-            View developer docs
-          </Link>
-        </div>
-        <div className="blobsea-code">
-          <div className="blobsea-code__traffic">
-            <span />
-            <span />
-            <span />
-          </div>
-          <pre>{codeSnippet}</pre>
-          <div className="blobsea-code__footer">
-            <span>npm install @blobsea/sdk</span>
-            <span>v0.1.0-beta</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="blobsea-banner">
-        <span>///</span>
-        <span>HTTP 402</span>
-        <span>///</span>
-        <span>PAYMENT REQUIRED</span>
-        <span>///</span>
-        <span>AUTOMATION</span>
-        <span>///</span>
+        </section>
       </div>
     </div>
   );

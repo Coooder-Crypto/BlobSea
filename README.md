@@ -17,6 +17,7 @@ BlobSea/
 │  ├─ app/api/walrus/*      # Walrus 上传/下载代理
 │  ├─ components/           # BlobSeaApp、ListingCreator、ListingGallery 等
 │  └─ lib/                  # bytes、walrus 工具、网络配置
+├─ sdk/                     # @blobsea/cli，纯 CLI 的 Walrus + Sui 工具链
 ├─ STAGE*.md                # 项目阶段性规划
 └─ README.md
 ```
@@ -52,6 +53,68 @@ BlobSea/
    pnpm dev
    ```
    默认运行在 `http://localhost:3000`，连接测试网钱包（如 Sui Wallet、Ethos）即可体验上传/购买流程。
+
+## CLI / SDK 使用
+项目内置了一个纯 CLI 包 `sdk/`（`@blobsea/cli`），可在本地或 CI 环境完成与网站相同的 Walrus + Sui 操作，便于自动化上传、上架、下载：
+
+1. **安装依赖并构建**
+   ```bash
+   cd sdk
+   pnpm install
+   pnpm build
+   # 或 pnpm dev -- --help 直接查看指令
+   ```
+
+2. **准备配置**
+   - 在 CLI 工作目录下创建 `blobsea.config.json` 或 `.env`，写入 Walrus gateway、aggregator、Marketplace IDs、Sui RPC 与私钥等信息。例如：
+     ```json
+     {
+       "walrusGateway": "https://publisher.walrus-testnet.walrus.space",
+       "walrusBlobBase": "https://aggregator.walrus-testnet.walrus.space",
+       "marketplacePackageId": "0x...",
+       "marketplaceId": "0x...",
+       "suiRpcUrl": "https://fullnode.testnet.sui.io",
+       "suiPrivateKey": "suiprivkey..."
+     }
+     ```
+
+3. **常用命令**
+   ```bash
+   # 查看指令
+   blobsea-cli --help
+
+   # 本地加密文件并生成 manifest/payload
+   blobsea-cli encrypt ./path/to/data.bin \
+     --terms ./terms.pdf \
+     --manifest ./out/manifest.json \
+     --payload ./out/payload.blob
+
+   # 加密 + 上传 Walrus（会更新 manifest 中的 blobId/hash）
+   blobsea-cli upload ./path/to/data.bin \
+     --config ./blobsea.config.json \
+     --endpoint https://publisher.walrus-testnet.walrus.space/v1/blobs
+
+   # 链上上架 Listing（调用 Move create_listing）
+   blobsea-cli listing create ./out/manifest.json --price 1.5
+
+   # 查看链上最新 Listing 事件
+   blobsea-cli listing list
+
+   # 查看某钱包持有的 License
+   blobsea-cli license list
+
+   # 根据 License 下载并解密 Walrus Blob
+   blobsea-cli license download <LICENSE_ID> --out ./dataset.bin
+
+   # 检查当前配置
+   blobsea-cli config --config ./blobsea.config.json
+   ```
+
+4. **工作流示例**
+   - 通过 `encrypt` 生成 manifest + payload → `upload` 推 Walrus → `listing create` 写链上 → `listing list` 验证事件。
+   - 买家或自动化 Agent 可使用 `license download` 命令，通过 License ID 直接把 Walrus Blob 拉回本地、校验哈希并解密，还原为上传时的原始文件。
+
+CLI 完全独立于前端运行，适合在 CI、脚本或其他系统中复用 BlobSea 的核心能力。欢迎根据具体需求拓展更多命令或脚本。
 
 ## 402 & Agent 愿景
 BlobSea 的长期愿景是做「程序可访问的数据市场」。结合 HTTP 402 Payment Required 的理念，我们希望把 Walrus + Sui 组合成一套可被自动化代理访问的 402 数据 API：

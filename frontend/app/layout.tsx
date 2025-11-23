@@ -22,9 +22,7 @@ export default function RootLayout({
       <body>
         <Providers>
           <HeaderNav />
-          <main style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem 1rem" }}>
-            {children}
-          </main>
+          <main className="min-h-screen">{children}</main>
           <SiteFooter />
         </Providers>
       </body>

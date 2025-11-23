@@ -1,28 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Button, Card, Flex, Heading, Text, Separator } from "@radix-ui/themes";
+import { useMemo, useState, type ReactNode } from "react";
+import { Button, Card, Flex, Heading, Text } from "@radix-ui/themes";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 
-import { useNetworkVariable } from "@/lib/networkConfig";
-import { bytesFromSui, utf8FromBytes } from "@/lib/bytes";
+import ItemCard, { type PurchaseStatus } from "@/components/ItemCard";
+import {
+  useMarketplaceListings,
+  type ListingEvent,
+} from "@/hooks/useMarketplaceListings";
 
 const SUI_TYPE = "0x2::sui::SUI";
-
-type ListingEvent = {
-  listingId: string;
-  seller: string;
-  price: bigint;
-  coinType: string;
-  paymentMethod: number;
-  name?: string;
-  description?: string;
-  timestampMs?: number;
-  blobId?: string;
-  walrusHash?: string;
-};
 
 type Props = {
   currentAddress?: string;
@@ -30,49 +19,14 @@ type Props = {
 
 export default function ListingGallery({ currentAddress }: Props) {
   const suiClient = useSuiClient();
-  const marketplacePackageId = useNetworkVariable("marketplacePackageId");
-  const marketplaceId = useNetworkVariable("marketplaceId");
-
   const {
-    data: listings,
+    listings,
     isLoading,
     error,
     refetch,
-  } = useQuery<ListingEvent[]>({
-    queryKey: ["blobsea-listings", marketplacePackageId],
-    enabled: Boolean(marketplacePackageId),
-    queryFn: async () => {
-      if (!marketplacePackageId) return [];
-      const eventType = `${marketplacePackageId}::marketplace::ListingCreated`;
-      const events = await suiClient.queryEvents({
-        query: { MoveEventType: eventType },
-        order: "descending",
-        limit: 20,
-      });
-      return events.data
-        .map((event) => {
-          const parsed = event.parsedJson as any;
-          if (!parsed?.listing_id) return null;
-          const rawName = bytesFromSui(parsed.name);
-          const rawDescription = bytesFromSui(parsed.description);
-          return {
-            listingId: parsed.listing_id as string,
-            seller: parsed.seller as string,
-            price: BigInt(parsed.price ?? 0),
-            coinType: parsed.coin_type?.fields?.name ?? SUI_TYPE,
-            paymentMethod: Number(parsed.payment_method ?? 0),
-            name: rawName.length ? utf8FromBytes(rawName) : undefined,
-            description: rawDescription.length ? utf8FromBytes(rawDescription) : undefined,
-            timestampMs: event.timestampMs ? Number(event.timestampMs) : undefined,
-            blobId: parsed.blob_id ?? undefined,
-            walrusHash: parsed.walrus_hash ?? undefined,
-          };
-        })
-        .filter(Boolean) as ListingEvent[];
-    },
-    refetchInterval: 30_000,
-  });
-  console.log(listings);
+    marketplaceId,
+    marketplacePackageId,
+  } = useMarketplaceListings();
 
   const content = useMemo(() => {
     if (!marketplacePackageId || !marketplaceId) {
@@ -96,7 +50,7 @@ export default function ListingGallery({ currentAddress }: Props) {
     }
 
     return (
-      <Flex direction="column" gap="3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {listings.map((listing) => (
           <ListingCard
             key={listing.listingId}
@@ -106,7 +60,7 @@ export default function ListingGallery({ currentAddress }: Props) {
             currentAddress={currentAddress}
           />
         ))}
-      </Flex>
+      </div>
     );
   }, [
     marketplacePackageId,
@@ -132,23 +86,22 @@ export default function ListingGallery({ currentAddress }: Props) {
   );
 }
 
-function ListingCard({
+export function ListingCard({
   listing,
   marketplacePackageId,
   marketplaceId,
   currentAddress,
+  label,
+  labelIcon,
 }: {
   listing: ListingEvent;
   marketplacePackageId: string;
   marketplaceId: string;
   currentAddress?: string;
+  label?: string;
+  labelIcon?: ReactNode;
 }) {
-  const [status, setStatus] = useState<
-    | { state: "idle" }
-    | { state: "pending" }
-    | { state: "success"; digest: string }
-    | { state: "error"; message: string }
-  >({ state: "idle" });
+  const [status, setStatus] = useState<PurchaseStatus>({ state: "idle" });
 
   const priceInSui = Number(listing.price) / 1_000_000_000;
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
@@ -202,50 +155,30 @@ function ListingCard({
   const listedAt = listing.timestampMs
     ? formatTimestamp(listing.timestampMs)
     : null;
+  const priceLabel = priceInSui.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+  const explorerUrl =
+    status.state === "success" ? getExplorerTxUrl(status.digest) : undefined;
   return (
-    <Card>
-      <Flex direction="column" gap="2">
-        <Heading size="3">{title}</Heading>
-        {!listing.name && (
-          <Text color="gray">ID: {shorten(listing.listingId)}</Text>
-        )}
-        <Text color="gray">Seller: {shorten(listing.seller)}</Text>
-        {listedAt && <Text color="gray">Listed at: {listedAt}</Text>}
-        {listing.description && (
-          <Text color="gray">{listing.description}</Text>
-        )}
-        <Text>Price: {priceInSui} SUI</Text>
-        {listing.blobId && (
-          <Text color="gray">BlobId: {shorten(listing.blobId)}</Text>
-        )}
-        <Button
-          onClick={handleBuy}
-          disabled={!canBuy || status.state === "pending"}
-        >
-          {status.state === "pending"
-            ? "Purchasing..."
-            : canBuy
-              ? "Purchase"
-              : "Connect wallet to purchase"}
-        </Button>
-        {status.state === "success" && (
-          <Text color="green" size="2">
-            <a
-              href={getExplorerTxUrl(status.digest)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Purchase successful — view on chain
-            </a>
-          </Text>
-        )}
-        {status.state === "error" && (
-          <Text color="red" size="2">
-            {status.message}
-          </Text>
-        )}
-      </Flex>
-    </Card>
+    <ItemCard
+      label={label ?? "Live Listing"}
+      labelIcon={labelIcon}
+      title={title}
+      description={listing.description}
+      listedAt={listedAt}
+      seller={listing.seller}
+      listingId={listing.listingId}
+      walrusHash={listing.walrusHash}
+      blobId={listing.blobId}
+      encrypted={Boolean(listing.blobId || listing.walrusHash)}
+      price={priceLabel}
+      canBuy={canBuy}
+      onBuy={handleBuy}
+      status={status}
+      explorerUrl={explorerUrl}
+    />
   );
 }
 
