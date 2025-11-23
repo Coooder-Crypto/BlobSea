@@ -11,15 +11,6 @@ BlobSea is an end-to-end data marketplace designed for agents. Creators encrypt 
 - **Licence-based decryption** – on purchase the contract mints a Licence NFT that carries the encrypted key package and timestamp; the TypeScript SDK or CLI decrypts locally once both blob + licence are fetched.
 - **Agent-first** – structured metadata, CLI commands, and the `BlobSeaAgent` class are designed so HTTP 402 billing hooks can expose pay‑per‑request APIs in the future.
 
-### Quick Diagrams
-
-See [`BLOBSEA_DECK_FLOWS.md`](./BLOBSEA_DECK_FLOWS.md) for Mermaid diagrams you can drop into docs or decks:
-- Slide 3 global flow + Creator/Buer sub-flows
-- Slide 4 cryptography architecture
-- Slide 5 key management sequence
-- Slide 6 smart-contract class diagram
-- Slide 9 agent state machine
-- Slide 12 HTTP 402 roadmap
 
 ---
 
