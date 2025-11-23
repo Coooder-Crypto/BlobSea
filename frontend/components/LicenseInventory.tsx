@@ -19,6 +19,8 @@ type LicenseRecord = {
   listingId: string;
   encryptedKey: Uint8Array;
   grantedAt: number;
+  listingName?: string;
+  listingDescription?: string;
 };
 
 type DownloadState =
@@ -48,7 +50,7 @@ export default function LicenseInventory({ currentAddress }: Props) {
         filter: { StructType: structType },
         options: { showContent: true },
       });
-      return response.data.map((item) => {
+      const base = response.data.map((item) => {
         const fields = (item.data?.content as any)?.fields ?? {};
         return {
           objectId: item.data?.objectId ?? "",
@@ -57,6 +59,32 @@ export default function LicenseInventory({ currentAddress }: Props) {
           grantedAt: Number(fields.granted_at ?? 0),
         } satisfies LicenseRecord;
       });
+      return Promise.all(
+        base.map(async (license) => {
+          if (!license.listingId) return license;
+          try {
+            const listingObject = await suiClient.getObject({
+              id: license.listingId,
+              options: { showContent: true },
+            });
+            const listingFields = (listingObject.data?.content as any)?.fields;
+            if (listingFields) {
+              const nameBytes = bytesFromSui(listingFields.name);
+              const descBytes = bytesFromSui(listingFields.description);
+              return {
+                ...license,
+                listingName: nameBytes.length ? utf8FromBytes(nameBytes) : undefined,
+                listingDescription: descBytes.length
+                  ? utf8FromBytes(descBytes)
+                  : undefined,
+              };
+            }
+          } catch (lookupError) {
+            console.warn("Failed to load listing metadata", lookupError);
+          }
+          return license;
+        }),
+      );
     },
     refetchInterval: 30_000,
   });
@@ -122,6 +150,8 @@ type LicenseCardProps = {
 
 function LicenseCard({ license, suiClient, status, onStatusChange }: LicenseCardProps) {
   const shortLicenseId = shorten(license.objectId, 6);
+  const shortListingId = shorten(license.listingId);
+  const listingTitle = license.listingName ?? shortListingId;
   const purchasedAt = license.grantedAt
     ? new Date(license.grantedAt).toLocaleString()
     : "Unknown";
@@ -168,16 +198,19 @@ function LicenseCard({ license, suiClient, status, onStatusChange }: LicenseCard
           <Key className="h-6 w-6 text-walrus-cyan" />
         </div>
         <div>
-          <h3 className="font-mono text-lg font-bold text-white">{shortLicenseId}</h3>
+          <h3 className="font-mono text-lg font-bold text-white">{listingTitle}</h3>
           <p className="font-mono text-xs text-white/60">
-            LICENSE ID: {shorten(license.objectId)} • PURCHASED: {purchasedAt}
+            LICENSE ID: {shortLicenseId} • PURCHASED: {purchasedAt}
           </p>
+          {license.listingDescription && (
+            <p className="mt-1 text-xs text-white/50">{license.listingDescription}</p>
+          )}
         </div>
       </div>
 
       <div className="flex flex-col gap-3 text-right md:items-end">
         <div className="font-pixel text-xl text-walrus-cyan">VALID</div>
-        <div className="font-mono text-xs text-white/50">Listing: {shorten(license.listingId)}</div>
+        <div className="font-mono text-xs text-white/50">Listing: {shortListingId}</div>
         <PixelButton
           size="sm"
           variant="secondary"
