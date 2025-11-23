@@ -181,7 +181,7 @@ export default function BlobSeaApp() {
 
           <div className="mt-2 flex flex-col items-center justify-center gap-6 sm:flex-row">
             <Link
-              href="/buy"
+              href="/market"
               className="font-bold inline-flex items-center gap-2 border-2 border-[#53f7ff] bg-[#53f7ff] px-8 py-4 font-mono text-sm uppercase tracking-wider text-black shadow-[4px_4px_0_rgba(34,211,238,0.3)] transition-transform duration-200 hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(34,211,238,0.5)]"
             >
               Start Exploring <ArrowRight className="h-5 w-5" />

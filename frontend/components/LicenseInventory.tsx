@@ -240,6 +240,10 @@ async function downloadWithLicense({
   const authTag = payload.slice(12, 28);
   const ciphertext = payload.slice(28);
   const cipherWithTag = concatBytes(ciphertext, authTag);
+  const cipherBuffer = cipherWithTag.buffer.slice(
+    cipherWithTag.byteOffset,
+    cipherWithTag.byteOffset + cipherWithTag.byteLength,
+  ) as ArrayBuffer;
   const cryptoKey = await crypto.subtle.importKey(
     "raw",
     key,
@@ -250,7 +254,7 @@ async function downloadWithLicense({
   const plaintext = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: nonce },
     cryptoKey,
-    cipherWithTag,
+    cipherBuffer,
   );
   const blob = new Blob([plaintext]);
   const url = URL.createObjectURL(blob);

@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { usePathname, useRouter } from "next/navigation";
 import { ConnectButton } from "@mysten/dapp-kit";
 import BlobSeaLogo from "@/components/BlobSeaLogo";
 
-const navLinks = [
+const navLinks: ReadonlyArray<{ label: string; href: Route }> = [
   { label: "Discover", href: "/market" },
   { label: "Build", href: "/create" },
   { label: "Inventory", href: "/inventory" },

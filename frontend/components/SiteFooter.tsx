@@ -1,6 +1,4 @@
-'use client';
-
-import Link from "next/link";
+"use client";
 
 const footerLinks = [
   { label: "Docs", href: "https://github.com/mystenlabs/walrus" },
@@ -16,9 +14,9 @@ export default function SiteFooter() {
         <div className="font-pixel text-lg tracking-[0.5em] text-white">BLOBSEA</div>
         <div className="flex flex-wrap items-center justify-center gap-4 text-[0.65rem] uppercase tracking-[0.4em] md:justify-start">
           {footerLinks.map((link) => (
-            <Link key={link.label} href={link.href} target="_blank" rel="noreferrer" className="text-white/60 transition-colors hover:text-white">
+            <a key={link.label} href={link.href} target="_blank" rel="noreferrer" className="text-white/60 transition-colors hover:text-white">
               {link.label}
-            </Link>
+            </a>
           ))}
         </div>
         <div className="text-[0.6rem] uppercase tracking-[0.4em] text-white/50">© 2024 BlobSea Marketplace</div>

@@ -3,9 +3,10 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
-import { bcs } from "@mysten/sui/bcs";
 
-import { Manifest, buildKeyPackage, encryptAndUpload } from "@/lib/walrus";
+import type { Manifest } from "@/lib/walrus";
+import { buildKeyPackage, encryptAndUpload } from "@/lib/walrus";
+import { bcs } from "@mysten/sui/bcs";
 import { useNetworkVariable } from "@/lib/networkConfig";
 import { hexToBytes } from "@/lib/bytes";
 import { Button as PixelButton } from "@/components/UI/Button";
@@ -417,58 +418,111 @@ function submitListing({
   suiClient,
   setStatus,
 }: SubmitArgs) {
-  const tx = new Transaction();
-  const manifestBytes = bcs.ser(Manifest, manifest).toBytes();
-  const keyPackage = buildKeyPackage(manifest);
+  try {
+    const tx = new Transaction();
+    const priceMist = toMist(priceSui);
+    const walrusBlobId = stringToBytes(manifest.blobId ?? "");
+    if (walrusBlobId.length === 0) {
+      throw new Error("Walrus blobId is missing");
+    }
+    const walrusHashBytes = toHashBytes(manifest.walrusHash, manifest.contentHash);
+    const termsBytes = hexToBytes(manifest.termsHash ?? "");
+    const keyBytes = buildKeyPackage(
+      hexToBytes(manifest.keyHex),
+      hexToBytes(manifest.nonceHex),
+      manifest.sourceFileName,
+    );
 
-  const price = BigInt(Math.round(Number(priceSui) * 1_000_000_000));
-  const payment = tx.splitCoins(tx.gas, [tx.pure.u64(price)]);
+    tx.moveCall({
+      target: `${marketplacePackageId}::marketplace::create_listing`,
+      typeArguments: [SUI_TYPE],
+      arguments: [
+        tx.object(marketplaceId),
+        tx.pure.u64(priceMist),
+        tx.pure(pureVectorBytes(nameBytes)),
+        tx.pure(pureVectorBytes(descriptionBytes)),
+        tx.pure(pureVectorBytes(walrusBlobId)),
+        tx.pure(pureVectorBytes(walrusHashBytes)),
+        tx.pure(pureVectorBytes(termsBytes)),
+        tx.pure(pureVectorBytes(keyBytes)),
+        tx.pure.u8(PAYMENT_METHOD_DIRECT_SUI),
+      ],
+    });
 
-  const manifestVector = tx.pure.vector(manifestBytes);
-  const keyPackageVector = tx.pure.vector(keyPackage);
-  const nameVector = tx.pure.vector(nameBytes);
-  const descriptionVector = tx.pure.vector(descriptionBytes);
-
-  tx.moveCall({
-    target: `${marketplacePackageId}::marketplace::create_listing`,
-    typeArguments: [SUI_TYPE],
-    arguments: [
-      tx.object(marketplaceId),
-      manifestVector,
-      keyPackageVector,
-      nameVector,
-      descriptionVector,
-      payment,
-      tx.pure.u64(price),
-      tx.pure.u8(PAYMENT_METHOD_DIRECT_SUI),
-    ],
-  });
-
-  setStatus({ state: "submitting" });
-  signAndExecute(
-    { transaction: tx },
-    {
-      onSuccess: (result) => {
-        suiClient
-          .waitForTransaction({ digest: result.digest })
-          .then(() => setStatus({ state: "success", digest: result.digest }))
-          .catch((error) =>
+    setStatus({ state: "submitting" });
+    signAndExecute(
+      { transaction: tx },
+      {
+        onSuccess: (result) => {
+          const digest =
+            (result as { digest?: string } | undefined)?.digest ||
+            (result as any)?.effects?.transactionDigest;
+          if (!digest) {
             setStatus({
               state: "error",
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Failed while waiting for on-chain confirmation",
-            }),
-          );
+              message: "Transaction submitted but no digest returned",
+            });
+            return;
+          }
+          suiClient
+            .waitForTransaction({ digest })
+            .then(() => setStatus({ state: "success", digest }))
+            .catch((error) =>
+              setStatus({
+                state: "error",
+                message:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed while waiting for on-chain confirmation",
+              }),
+            );
+        },
+        onError: (error) =>
+          setStatus({
+            state: "error",
+            message: error instanceof Error ? error.message : String(error),
+          }),
       },
-      onError: (error) =>
-        setStatus({
-          state: "error",
-          message: error instanceof Error ? error.message : String(error),
-        }),
-    },
-  );
+    );
+  } catch (error) {
+    setStatus({
+      state: "error",
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+function toMist(value: string): bigint {
+  const numeric = Number(value);
+  if (!isFinite(numeric) || numeric <= 0) {
+    throw new Error("Price must be greater than 0");
+  }
+  return BigInt(Math.floor(numeric * 1_000_000_000));
+}
+
+function stringToBytes(value: string) {
+  return new TextEncoder().encode(value ?? "");
+}
+
+function toHashBytes(primary?: string | null, fallback?: string | null) {
+  const value = primary ?? fallback ?? "";
+  if (!value) return new Uint8Array();
+  if (isHex(value)) {
+    return hexToBytes(value);
+  }
+  if (primary && fallback && primary !== fallback) {
+    return toHashBytes(fallback, null);
+  }
+  throw new Error("Walrus hash must be hex");
+}
+
+function isHex(value: string) {
+  const normalized = value.startsWith("0x") ? value.slice(2) : value;
+  return /^[0-9a-fA-F]+$/.test(normalized);
+}
+
+function pureVectorBytes(bytes: Uint8Array) {
+  return bcs.vector(bcs.u8()).serialize(Array.from(bytes)).toBytes();
 }
 
 function shorten(value?: string, length = 4) {
@@ -476,15 +530,6 @@ function shorten(value?: string, length = 4) {
   return `${value.slice(0, length)}...${value.slice(-length)}`;
 }
 
-function stringToBytes(value: string) {
-  return new TextEncoder().encode(value);
-}
-
 function getExplorerTxUrl(digest: string) {
   return `https://suiexplorer.com/txblock/${digest}?network=testnet`;
-}
-
-export function decodeHexManifest(hex: string) {
-  const bytes = hexToBytes(hex);
-  return bcs.de(Manifest, bytes);
 }

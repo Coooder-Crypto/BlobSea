@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,8 +23,9 @@ export default function SellView() {
             Encrypt, list, and get paid in one flow
           </h1>
           <p className="mx-auto mt-4 max-w-2xl font-mono text-sm text-white/70">
-            BlobSea handles Walrus encryption and Sui listing commits for you. Upload once, define terms,
-            and let agents discover your dataset automatically.
+            BlobSea handles Walrus encryption and Sui listing commits for you.
+            Upload once, define terms, and let agents discover your dataset
+            automatically.
           </p>
           <div className="mt-6 inline-flex flex-wrap items-center justify-center gap-3 font-mono text-xs uppercase tracking-[0.3em] text-white/70">
             <Link
@@ -35,7 +36,7 @@ export default function SellView() {
             </Link>
             <span className="text-white/30">or</span>
             <Link
-              href="/buy"
+              href="/market"
               className="rounded-full border border-white/20 px-4 py-2 text-white transition hover:border-walrus-cyan/40 hover:text-white"
             >
               Switch to buyer view
@@ -47,10 +48,13 @@ export default function SellView() {
           <ListingCreator currentAddress={currentAccount.address} />
         ) : (
           <div className="border-2 border-white/15 bg-[#070d1a] p-8 text-center shadow-[0_40px_80px_rgba(1,3,10,0.6)]">
-            <h2 className="font-mono text-2xl text-white">Connect your Sui wallet</h2>
+            <h2 className="font-mono text-2xl text-white">
+              Connect your Sui wallet
+            </h2>
             <p className="mt-3 font-mono text-sm text-white/70">
-              Use the top-right Connect Wallet button. Once authorized, BlobSea will encrypt files locally,
-              upload them to Walrus, and mint listings on Sui for you.
+              Use the top-right Connect Wallet button. Once authorized, BlobSea
+              will encrypt files locally, upload them to Walrus, and mint
+              listings on Sui for you.
             </p>
             <PixelButton
               size="md"

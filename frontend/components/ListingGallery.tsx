@@ -109,8 +109,8 @@ export function ListingCard({
 
   const canBuy =
     Boolean(currentAddress) &&
-    marketplacePackageId &&
-    marketplaceId &&
+    Boolean(marketplacePackageId) &&
+    Boolean(marketplaceId) &&
     listing.paymentMethod === 0;
 
   const handleBuy = () => {
