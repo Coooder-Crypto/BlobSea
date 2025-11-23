@@ -46,7 +46,7 @@ export default function HeaderNav() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 w-full border-b transition-all duration-500 ${showSolidBackground ? "bg-[#040817]/90 backdrop-blur-md border-white/10 py-0 shadow-lg" : "bg-transparent border-transparent py-4"}`}
+      className={`sticky top-0 z-50 w-full border-b transition-all px-28 duration-500 ${showSolidBackground ? "bg-[#040817]/90 backdrop-blur-md border-white/10 py-0 shadow-lg" : "bg-transparent border-transparent py-4"}`}
     >
       <div className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
         <div

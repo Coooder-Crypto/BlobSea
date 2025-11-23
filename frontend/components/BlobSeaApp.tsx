@@ -42,25 +42,25 @@ const sdkHighlights = [
   { icon: Cpu, label: "HTTP 402 automation" },
 ];
 
-const codeSnippet = `// 1. Initialize the BlobSea Agent
-import { BlobSea } from '@blobsea/sdk';
+const codeSnippet = `import { BlobSeaAgent } from '@blobsea/sdk';
 
-const agent = new BlobSea.Agent({
-  network: 'sui:testnet',
-  privateKey: process.env.AGENT_KEY
+// 1. Bootstrap the agent
+const agent = new BlobSeaAgent({
+  suiNetwork: 'testnet',
+  keypair: process.env.AGENT_KEY,
 });
 
 // 2. Discover & Purchase Data
 const listingId = '0x123...abc';
 const license = await agent.marketplace.buy({
   listing: listingId,
-  budget: '100 SUI'
+  budget: '100 SUI',
 });
 
 // 3. Download & Decrypt (Auto-handled)
 const dataset = await license.download();
 console.log(dataset.files[0].name);
-// Output: "training_data_v1.jsonl"`;
+// → 'training_data_v1.jsonl'`;
 
 export default function BlobSeaApp() {
   const [scrollY, setScrollY] = useState(0);
@@ -217,40 +217,67 @@ export default function BlobSeaApp() {
 
         <section
           ref={sdkRef}
-          className={`mt-24 grid overflow-hidden rounded-[32px] border border-white/10 bg-white/5 shadow-2xl transition-all duration-700 md:grid-cols-2 ${visible.sdk ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}
+          className={`mt-24 overflow-hidden border border-white/15 bg-[#04060f]/80 transition-all duration-700 ${visible.sdk ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}
         >
-          <div className="flex flex-col gap-4 border-b border-white/10 px-8 py-10 font-mono transition-colors duration-300 hover:bg-white/5 md:border-b-0 md:border-r">
-            <div className="inline-flex items-center gap-3 rounded-full border border-white/15 px-4 py-2 text-xs tracking-[0.4em] text-white/70">
-              <Terminal className="h-4 w-4" /> SDK &amp; AGENT API
+          <div className="grid gap-0 md:grid-cols-2">
+            <div className="flex flex-col justify-center border-b border-white/15 px-10 py-12 font-mono text-white transition-colors duration-300 hover:bg-white/5 md:border-b-0 md:border-r">
+              <div className="mb-6 flex items-center gap-3">
+                <Terminal className="h-6 w-6 text-walrus-purple" />
+                <span className="font-pixel text-2xl tracking-[0.3em]">
+                  SDK &amp; AGENT API
+                </span>
+              </div>
+              <h2 className="text-3xl font-bold">Programmable Data Markets</h2>
+              <p className="mt-4 text-sm text-white/70">
+                Integrate BlobSea directly into your AI pipelines. Our SDK
+                handles listing discovery, on-chain payments, and decryption
+                automatically—perfect for autonomous agents.
+              </p>
+              <div className="mt-8 space-y-4">
+                {sdkHighlights.map(({ icon: Icon, label }, index) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-4 text-sm text-white/80"
+                  >
+                    <span
+                      className={`flex h-10 w-10 items-center justify-center border ${
+                        index === 0
+                          ? "border-walrus-cyan/40 bg-walrus-cyan/10"
+                          : "border-walrus-purple/40 bg-walrus-purple/10"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-10">
+                <Link
+                  href="https://github.com/coooder/BlobSea/tree/main/sdk"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-3 border-2 border-walrus-cyan px-5 py-3 text-xs uppercase tracking-[0.3em] text-walrus-cyan transition hover:bg-walrus-cyan/10"
+                >
+                  View Developer Docs <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </div>
-            <h2 className="text-3xl font-semibold">
-              Programmable Data Markets
-            </h2>
-            <p className="text-white/70">
-              Integrate BlobSea directly into your AI pipelines. Our SDK handles
-              listing discovery, on-chain payments, and decryption
-              automatically.
-            </p>
-            <ul className="space-y-2 text-sm text-white/80">
-              {sdkHighlights.map(({ icon: Icon, label }) => (
-                <li key={label} className="flex items-center gap-3">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/10">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  {label}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="flex flex-col gap-4 bg-[#05050b] px-8 py-10 font-mono text-sm text-white/80 transition-colors duration-300 hover:bg-[#080810]">
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-red-400" />
-              <span className="h-3 w-3 rounded-full bg-yellow-400" />
-              <span className="h-3 w-3 rounded-full bg-green-400" />
-            </div>
-            <pre className="whitespace-pre-line">{codeSnippet}</pre>
-            <div className="border-t border-white/10 pt-4 text-xs tracking-[0.4em] text-white/60">
-              npm install @blobsea/cli
+            <div className="bg-[#0d0d10] px-8 py-10 font-mono text-xs text-white/80 md:px-12">
+              <div className="mb-4 flex gap-2">
+                <span className="h-3 w-3 rounded-full bg-red-500/40" />
+                <span className="h-3 w-3 rounded-full bg-yellow-500/40" />
+                <span className="h-3 w-3 rounded-full bg-green-500/40" />
+              </div>
+              <pre className="text-white/80">{codeSnippet}</pre>
+              <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4">
+                <span className="font-pixel text-3xl font-bold text-white">
+                  npm install @blobsea/sdk
+                </span>
+                <span className="font-pixel text-xl font-bold uppercase tracking-[0.3em] text-walrus-green">
+                  v0.1.0-beta
+                </span>
+              </div>
             </div>
           </div>
         </section>
