@@ -1,12 +1,15 @@
 'use client';
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 
 import ListingCreator from "@/components/ListingCreator";
+import { Button as PixelButton } from "@/components/UI/Button";
 
 export default function SellView() {
   const currentAccount = useCurrentAccount();
+  const router = useRouter();
 
   return (
     <section className="relative overflow-hidden bg-[#01030a] py-16 text-white">
@@ -43,18 +46,21 @@ export default function SellView() {
         {currentAccount ? (
           <ListingCreator currentAddress={currentAccount.address} />
         ) : (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-[0_40px_80px_rgba(1,3,10,0.6)]">
+          <div className="border-2 border-white/15 bg-[#070d1a] p-8 text-center shadow-[0_40px_80px_rgba(1,3,10,0.6)]">
             <h2 className="font-mono text-2xl text-white">Connect your Sui wallet</h2>
             <p className="mt-3 font-mono text-sm text-white/70">
               Use the top-right Connect Wallet button. Once authorized, BlobSea will encrypt files locally,
               upload them to Walrus, and mint listings on Sui for you.
             </p>
-            <Link
-              href="/"
-              className="mt-6 inline-flex items-center justify-center rounded-full border border-walrus-cyan px-6 py-3 font-mono text-xs uppercase tracking-[0.3em] text-walrus-cyan transition hover:bg-walrus-cyan/10"
+            <PixelButton
+              size="md"
+              variant="outline"
+              className="mt-6 w-full justify-center"
+              type="button"
+              onClick={() => router.push("/")}
             >
               Back to homepage
-            </Link>
+            </PixelButton>
           </div>
         )}
       </div>

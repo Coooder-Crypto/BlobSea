@@ -1,120 +1,18 @@
-'use client';
+"use client";
 
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import {
-  Card,
-  Flex,
-  Heading,
-  Text,
-  Button,
-} from "@radix-ui/themes";
 import { useSuiClient } from "@mysten/dapp-kit";
 import { sha3_256 } from "@noble/hashes/sha3";
+import { Download, Key, RefreshCcw } from "lucide-react";
 
 import { useNetworkVariable } from "@/lib/networkConfig";
-import {
-  bytesFromSui,
-  bytesToHex,
-  utf8FromBytes,
-  concatBytes,
-} from "@/lib/bytes";
+import { Button as PixelButton } from "@/components/UI/Button";
+import { bytesFromSui, bytesToHex, concatBytes, utf8FromBytes } from "@/lib/bytes";
 
 type Props = {
   currentAddress?: string;
 };
-
-export default function LicenseInventory({ currentAddress }: Props) {
-  const marketplacePackageId = useNetworkVariable("marketplacePackageId");
-  const suiClient = useSuiClient();
-  const [downloadStatus, setDownloadStatus] = useState<
-    Record<
-      string,
-      | { state: "idle" }
-      | { state: "pending" }
-      | { state: "error"; message: string }
-      | { state: "success" }
-    >
-  >({});
-
-  const {
-    data: licenses,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ["blobsea-licenses", currentAddress, marketplacePackageId],
-    enabled: Boolean(currentAddress && marketplacePackageId),
-    queryFn: async () => {
-      if (!currentAddress || !marketplacePackageId) return [];
-      const structType = `${marketplacePackageId}::marketplace::License`;
-      const response = await suiClient.getOwnedObjects({
-        owner: currentAddress,
-        filter: { StructType: structType },
-        options: {
-          showContent: true,
-        },
-      });
-      return response.data.map((item) => {
-        const fields = (item.data?.content as any)?.fields ?? {};
-        return {
-          objectId: item.data?.objectId ?? "",
-          listingId: fields.listing_id ?? "",
-          encryptedKey: bytesFromSui(fields.encrypted_key),
-          grantedAt: Number(fields.granted_at ?? 0),
-        };
-      });
-    },
-    refetchInterval: 30_000,
-  });
-
-  return (
-    <Card>
-      <Flex direction="column" gap="3">
-        <Flex align="center" justify="between">
-          <Heading size="4">My Licenses</Heading>
-          <Button variant="soft" size="2" onClick={() => refetch()}>
-            Refresh
-          </Button>
-        </Flex>
-
-        {!currentAddress && (
-          <Text color="gray">Connect your wallet to view purchased licenses.</Text>
-        )}
-        {currentAddress && !marketplacePackageId && (
-          <Text color="gray">Configure the marketplace package information first.</Text>
-        )}
-
-        {isLoading && currentAddress && <Text>Loading...</Text>}
-        {error && (
-          <Text color="red">
-            Failed to load licenses:
-            {error instanceof Error ? error.message : String(error)}
-          </Text>
-        )}
-        {licenses && licenses.length === 0 && (
-          <Text color="gray">No licenses yet. Purchase a listing first.</Text>
-        )}
-
-        {licenses && licenses.length > 0 && (
-          <Flex direction="column" gap="2">
-            {licenses.map((license) => (
-              <LicenseCard
-                key={license.objectId}
-                license={license}
-                suiClient={suiClient}
-                status={downloadStatus[license.objectId] ?? { state: "idle" }}
-                onStatusChange={(next) =>
-                  setDownloadStatus((prev) => ({ ...prev, [license.objectId]: next }))
-                }
-              />
-            ))}
-          </Flex>
-        )}
-      </Flex>
-    </Card>
-  );
-}
 
 type LicenseRecord = {
   objectId: string;
@@ -123,25 +21,110 @@ type LicenseRecord = {
   grantedAt: number;
 };
 
+type DownloadState =
+  | { state: "idle" }
+  | { state: "pending" }
+  | { state: "success" }
+  | { state: "error"; message: string };
+
+export default function LicenseInventory({ currentAddress }: Props) {
+  const marketplacePackageId = useNetworkVariable("marketplacePackageId");
+  const suiClient = useSuiClient();
+  const [downloadStatus, setDownloadStatus] = useState<Record<string, DownloadState>>({});
+
+  const {
+    data: licenses,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<LicenseRecord[]>({
+    queryKey: ["blobsea-licenses", currentAddress, marketplacePackageId],
+    enabled: Boolean(currentAddress && marketplacePackageId),
+    queryFn: async () => {
+      if (!currentAddress || !marketplacePackageId) return [];
+      const structType = `${marketplacePackageId}::marketplace::License`;
+      const response = await suiClient.getOwnedObjects({
+        owner: currentAddress,
+        filter: { StructType: structType },
+        options: { showContent: true },
+      });
+      return response.data.map((item) => {
+        const fields = (item.data?.content as any)?.fields ?? {};
+        return {
+          objectId: item.data?.objectId ?? "",
+          listingId: fields.listing_id ?? "",
+          encryptedKey: bytesFromSui(fields.encrypted_key),
+          grantedAt: Number(fields.granted_at ?? 0),
+        } satisfies LicenseRecord;
+      });
+    },
+    refetchInterval: 30_000,
+  });
+
+  const statusMessage = useMemo(() => {
+    if (!currentAddress) return "Connect your wallet to view purchased licenses.";
+    if (!marketplacePackageId)
+      return "Configure marketplace package variables to sync your inventory.";
+    if (isLoading) return "Loading your licenses...";
+    if (error)
+      return `Failed to load licenses: ${error instanceof Error ? error.message : String(error)}`;
+    if (licenses && licenses.length === 0)
+      return "No licenses yet. Purchase a listing to see it here.";
+    return null;
+  }, [currentAddress, marketplacePackageId, isLoading, error, licenses]);
+
+  return (
+    <div>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 className="font-pixel text-5xl text-white">MY LICENSE INVENTORY</h2>
+          <p className="font-mono text-sm text-white/60">Manage purchased data access keys.</p>
+        </div>
+        <PixelButton variant="outline" size="sm" className="gap-1" onClick={() => refetch()}>
+          <RefreshCcw className="h-4 w-4" /> Refresh
+        </PixelButton>
+      </div>
+
+      {statusMessage ? (
+        <div className="border-2 border-dashed border-white/15 p-8 text-center font-mono text-sm text-white/60">
+          {statusMessage}
+          {licenses && licenses.length === 0 && (
+            <div className="mt-4 border border-white/15 p-6 text-xs text-white/50">
+              More items will appear here after purchase.
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {licenses?.map((license) => (
+            <LicenseCard
+              key={license.objectId}
+              license={license}
+              suiClient={suiClient}
+              status={downloadStatus[license.objectId] ?? { state: "idle" }}
+              onStatusChange={(next) =>
+                setDownloadStatus((prev) => ({ ...prev, [license.objectId]: next }))
+              }
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 type LicenseCardProps = {
   license: LicenseRecord;
   suiClient: ReturnType<typeof useSuiClient>;
-  status:
-    | { state: "idle" }
-    | { state: "pending" }
-    | { state: "error"; message: string }
-    | { state: "success" };
-  onStatusChange: (
-    status:
-      | { state: "idle" }
-      | { state: "pending" }
-      | { state: "error"; message: string }
-      | { state: "success" },
-  ) => void;
+  status: DownloadState;
+  onStatusChange: (state: DownloadState) => void;
 };
 
 function LicenseCard({ license, suiClient, status, onStatusChange }: LicenseCardProps) {
-  const shortId = `${license.objectId.slice(0, 6)}...${license.objectId.slice(-4)}`;
+  const shortLicenseId = shorten(license.objectId, 6);
+  const purchasedAt = license.grantedAt
+    ? new Date(license.grantedAt).toLocaleString()
+    : "Unknown";
 
   const handleDownload = async () => {
     onStatusChange({ state: "pending" });
@@ -179,30 +162,47 @@ function LicenseCard({ license, suiClient, status, onStatusChange }: LicenseCard
   };
 
   return (
-    <Card>
-      <Flex direction="column" gap="2">
-        <Text>License object: {shortId}</Text>
-        <Text color="gray">Listing: {license.listingId}</Text>
-        <Button
-          variant="soft"
+    <div className="flex flex-col gap-6 border-l-4 border-walrus-cyan border-y border-r border-white/15 bg-[#070d1a] p-6 transition hover:bg-white/5 md:flex-row md:items-center md:justify-between">
+      <div className="flex items-start gap-4">
+        <div className="border border-walrus-cyan/30 bg-walrus-cyan/10 p-3">
+          <Key className="h-6 w-6 text-walrus-cyan" />
+        </div>
+        <div>
+          <h3 className="font-mono text-lg font-bold text-white">{shortLicenseId}</h3>
+          <p className="font-mono text-xs text-white/60">
+            LICENSE ID: {shorten(license.objectId)} • PURCHASED: {purchasedAt}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 text-right md:items-end">
+        <div className="font-pixel text-xl text-walrus-cyan">VALID</div>
+        <div className="font-mono text-xs text-white/50">Listing: {shorten(license.listingId)}</div>
+        <PixelButton
+          size="sm"
+          variant="secondary"
+          className="justify-center gap-2"
           onClick={handleDownload}
           disabled={status.state === "pending"}
         >
-          {status.state === "pending" ? "Downloading..." : "Download & decrypt"}
-        </Button>
+          <Download className="h-4 w-4" />
+          {status.state === "pending" ? "Decrypting" : "Decrypt & Download"}
+        </PixelButton>
         {status.state === "error" && (
-          <Text color="red" size="2">
-            {status.message}
-          </Text>
+          <p className="font-mono text-xs text-red-400">{status.message}</p>
         )}
         {status.state === "success" && (
-          <Text color="green" size="2">
-            Download complete
-          </Text>
+          <p className="font-mono text-xs text-walrus-green">Download complete</p>
         )}
-      </Flex>
-    </Card>
+      </div>
+    </div>
   );
+}
+
+function shorten(value: string, visible = 4) {
+  if (!value) return "—";
+  if (value.length <= visible * 2) return value;
+  return `${value.slice(0, visible)}...${value.slice(-visible)}`;
 }
 
 async function downloadWithLicense({
@@ -254,10 +254,10 @@ async function downloadWithLicense({
   );
   const blob = new Blob([plaintext]);
   const url = URL.createObjectURL(blob);
-  const filename = fileName || `${blobId.slice(0, 8)}-${Date.now()}.bin`;
+  const name = fileName || `${blobId.slice(0, 8)}-${Date.now()}.bin`;
   const link = document.createElement("a");
   link.href = url;
-  link.download = filename;
+  link.download = name;
   document.body.appendChild(link);
   link.click();
   link.remove();

@@ -9,6 +9,7 @@ const config: Config = {
         "walrus-cyan": "#53f7ff",
         "walrus-purple": "#b48aff",
         "walrus-border": "rgba(255,255,255,0.08)",
+        "walrus-card": "#0a1221",
       },
       fontFamily: {
         mono: ["Space Mono", "IBM Plex Mono", "monospace"],
