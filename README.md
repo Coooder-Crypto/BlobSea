@@ -140,7 +140,13 @@ Even though HTTP 402 billing isn’t implemented yet, the architecture reserves 
 
 ---
 
-## 7. Contributing / Next Steps
+## 7. Links
+
+- Docs (GitBook): https://coooder.gitbook.io/blobsea/
+- Repo: https://github.com/Coooder-Crypto/BlobSea
+- CLI/SDK: `@blobsea/cli` (v0.1.0-beta)
+
+## 8. Contributing / Next Steps
 
 - Expand listing metadata (`category`, `data_format`, `schema`) so agents can reason about catalog entries.
 - Add policy fields on licences (expiry, usage count) for future 402 enforcement.

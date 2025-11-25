@@ -1,8 +1,8 @@
 "use client";
 
 const footerLinks = [
-  { label: "Docs", href: "https://github.com/mystenlabs/walrus" },
-  { label: "Github", href: "https://github.com/coooder/BlobSea" },
+  { label: "Docs", href: "https://coooder.gitbook.io/blobsea/" },
+  { label: "Github", href: "https://github.com/Coooder-Crypto/BlobSea" },
   { label: "Walrus", href: "https://www.walrus.site/" },
   { label: "Sui", href: "https://sui.io" },
 ];

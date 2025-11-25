@@ -187,7 +187,7 @@ export default function BlobSeaApp() {
               Start Exploring <ArrowRight className="h-5 w-5" />
             </Link>
             <Link
-              href="https://github.com/coooder/BlobSea"
+              href="https://coooder.gitbook.io/blobsea/"
               target="_blank"
               rel="noreferrer"
               className="font-bold inline-flex items-center gap-2 border-2 border-[#53f7ff] px-8 py-4 font-mono text-sm uppercase tracking-wider text-white transition-transform duration-200 hover:-translate-y-1 hover:bg-[#53f7ff]/10"
