@@ -254,7 +254,7 @@ export default function BlobSeaApp() {
               </div>
               <div className="mt-10">
                 <Link
-                  href="https://github.com/coooder/BlobSea/tree/main/sdk"
+                  href="https://coooder.gitbook.io/blobsea/sdk-and-cli"
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-3 border-2 border-walrus-cyan px-5 py-3 text-xs uppercase tracking-[0.3em] text-walrus-cyan transition hover:bg-walrus-cyan/10"
