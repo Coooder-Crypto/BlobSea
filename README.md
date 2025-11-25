@@ -33,7 +33,7 @@ Key assets:
 - `frontend/app/icon.svg` – pixel logo used in the browser tab favicon.
 - `frontend/components/InventoryView.tsx` – standalone inventory route so `/inventory` matches the design system.
 - `frontend/public/blobsea-architecture.mmd` – raw Mermaid file for the solution overview slide.
-- `BLOBSEA_DECK_FLOWS.md` – Markdown cheat sheet with all deck-ready diagrams.
+- `BLOBSEA_DECK_FLOWS.md` – deck-ready diagrams; `docs/` – GitBook source (Markdown) for hosted docs.
 
 ---
 
